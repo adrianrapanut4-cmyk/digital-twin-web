@@ -57,9 +57,9 @@ const PROJECTS = [
 // ── Radial Nav ──────────────────────────────────────────────────────────────
 function RadialNav() {
   const [open, setOpen] = useState(false);
-  // Spread items in an upward arc: left-to-right from 150° → 30°
-  const ANGLES = [150, 115, 90, 65, 30];
-  const DIST = 120;
+  // Spread items in an upward arc: left-to-right from 160° → 20°
+  const ANGLES = [160, 120, 90, 60, 20];
+  const DIST = 180;
   const HALF = 36; // half of 72px orb
 
   const scrollTo = (id: string) => {

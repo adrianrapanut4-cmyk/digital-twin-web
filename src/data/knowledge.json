@@ -1,0 +1,82 @@
+[
+  {
+    "id": "identity",
+    "category": "identity",
+    "text": "Adrian Kyle T. Rapanut is a third-year Bachelor of Science in Information Technology student at St. Paul University Philippines. His professional tagline is 'Transforming ideas into technology-driven solutions.' He is passionate about artificial intelligence and building real-world AI applications. Email: adrianrapanut4@gmail.com. GitHub: https://github.com/adrianrapanut4-cmyk."
+  },
+  {
+    "id": "about",
+    "category": "about",
+    "text": "Adrian Kyle T. Rapanut is a third-year IT student at St. Paul University Philippines, currently working on a research project titled 'Paulicy: Object Detection System with AI Application.' He is passionate about applying artificial intelligence to real-world problems and continuously improving his skills. He takes pride in doing well in his course and staying committed to learning. What sets him apart is his drive to turn ideas into practical, working solutions."
+  },
+  {
+    "id": "education",
+    "category": "education",
+    "text": "Adrian is pursuing a Bachelor of Science in Information Technology (BSIT) at St. Paul University Philippines. He is currently in his 3rd year. He is working on a capstone/thesis research project called 'Paulicy: Object Detection System with AI Application', which involves computer vision and artificial intelligence."
+  },
+  {
+    "id": "research-paulicy",
+    "category": "project",
+    "text": "Research Project: Paulicy — Object Detection System with AI Application. Adrian is currently developing Paulicy as part of his university research. It is an object detection system that uses artificial intelligence to identify and classify objects. This project reflects his ability to apply machine learning concepts to practical academic problems."
+  },
+  {
+    "id": "internship-ausbiz",
+    "category": "experience",
+    "text": "Adrian Kyle T. Rapanut is currently doing an AI Builder internship at Ausbiz Consulting (March 2026 – present). The program is called 'AI Builder - RAG for Data Specialist'. During this internship he has been learning and building RAG (Retrieval-Augmented Generation) systems from scratch, starting with local development and progressing to cloud deployment. He built production-ready AI applications and deployed them to Vercel. Technologies used include Next.js, TypeScript, Upstash Vector, Groq, ChromaDB, Ollama, Python, and Tailwind CSS."
+  },
+  {
+    "id": "internship-week1",
+    "category": "experience",
+    "text": "In Week 1 of the Ausbiz AI Builder internship, Adrian researched AI Agents and MCP (Model Context Protocol) servers, writing a comprehensive report on AI agent architectures, frontier LLM providers, and the evolving AI ecosystem. He set up his full development environment including VS Code Insiders, GitHub Copilot, Node.js, Git, and Ollama."
+  },
+  {
+    "id": "internship-week2",
+    "category": "experience",
+    "text": "In Week 2 of the Ausbiz AI Builder internship, Adrian built FoodRAG — first as a local Python application using ChromaDB and Ollama (llama3.2 + mxbai-embed-large), then migrated it to a cloud stack using Upstash Vector and Groq on Next.js. He deployed the web version to Vercel. This demonstrated his ability to move between local and cloud AI infrastructure."
+  },
+  {
+    "id": "internship-week3",
+    "category": "experience",
+    "text": "In Week 3 of the Ausbiz AI Builder internship, Adrian enhanced FoodRAG with three major features: (1) expanded the food knowledge base from 35 to 55 items across 18 global regions; (2) implemented real-time streaming responses using Groq's streaming API and the Web Streams ReadableStream API with an NDJSON protocol; (3) added metadata filtering allowing users to filter by region and food type before the vector similarity search runs. He also wrote a formal DESIGN.md architecture document and redeployed to Vercel."
+  },
+  {
+    "id": "project-foodrag",
+    "category": "project",
+    "text": "Project: FoodRAG. Adrian built a cloud-hosted RAG (Retrieval-Augmented Generation) application that answers natural language questions about global cuisine. The system uses Upstash Vector for semantic search with automatic text embedding, and Groq's LLaMA 3.3 70B model for generating answers. The Week 3 version features 55 food items across 18 world regions with region and food-type metadata filtering. The UI supports real-time streaming responses. Tech stack: Next.js 16, TypeScript, Tailwind CSS, Upstash Vector, Groq, Vercel. Live at: https://foodrag-n6ntcajca-adrianrapanut4-cmyks-projects.vercel.app. GitHub: https://github.com/adrianrapanut4-cmyk/foodrag-web."
+  },
+  {
+    "id": "project-foodrag-technical",
+    "category": "project",
+    "text": "FoodRAG Technical Achievement: Adrian implemented a newline-delimited JSON (NDJSON) streaming protocol where the server first emits a sources event (with the top-3 retrieved food documents), then streams LLM tokens one by one. The client uses the Web Streams API (ReadableStream, getReader, TextDecoder) to render tokens incrementally with a typewriter effect and a blinking cursor. He also implemented Upstash Vector's SQL-style metadata filter strings (e.g., region = 'Japan' AND type = 'Dessert') for pre-filter scoping before vector similarity ranking."
+  },
+  {
+    "id": "skills-ai",
+    "category": "skills",
+    "text": "Adrian's AI and Machine Learning skills include: RAG (Retrieval-Augmented Generation) system design and implementation, vector embeddings and semantic search, LLM prompting and integration, ChromaDB (local vector database), Upstash Vector (cloud serverless vector database), Ollama (local LLM hosting), Groq API (cloud LLM inference), streaming LLM responses, metadata filtering for vector search, and object detection (from Paulicy research)."
+  },
+  {
+    "id": "skills-web",
+    "category": "skills",
+    "text": "Adrian's web development skills include: Next.js (App Router, API routes, Server Actions), React, TypeScript, Tailwind CSS, REST APIs, real-time streaming with ReadableStream, NDJSON protocol, responsive UI design, and deployment on Vercel."
+  },
+  {
+    "id": "skills-tools",
+    "category": "skills",
+    "text": "Adrian's tools and cloud skills include: Git and GitHub (version control, branching, pull requests), Vercel (deployment, environment variables, CI/CD), VS Code with GitHub Copilot, Python (3.13), Node.js (v22), npm, and basic understanding of MCP (Model Context Protocol) server architecture."
+  },
+  {
+    "id": "skills-languages",
+    "category": "skills",
+    "text": "Adrian's programming languages: Python (used for local RAG systems, data pipelines, ChromaDB integration), TypeScript (used for Next.js cloud applications and API routes), JavaScript (underlying Next.js and Node.js ecosystem)."
+  },
+  {
+    "id": "personality",
+    "category": "personality",
+    "text": "Adrian is professional but approachable in communication — concise, uses real examples, and avoids unnecessary jargon. He is kind and honest. When he is unsure about something, he is transparent and open rather than guessing, and may suggest a related perspective he does have knowledge about. He will not discuss topics unrelated to his portfolio or professional background. He represents himself accurately and never fabricates credentials or metrics."
+  },
+  {
+    "id": "digital-twin-project",
+    "category": "project",
+    "text": "Project: Digital Twin Portfolio. Adrian is building a personal AI-powered digital twin as part of the Ausbiz AI Builder internship (Week 4 and beyond). This is a web-based portfolio where an embedded AI agent can represent Adrian in professional conversations — answering questions about his background, projects, and skills using RAG over his actual career data. The digital twin uses Upstash Vector for semantic search over his profile knowledge base, Groq for LLM responses, and is deployed on Vercel with a unique deep-space gradient design and radial navigation."
+  }
+]

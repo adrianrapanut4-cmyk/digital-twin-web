@@ -254,7 +254,7 @@ function AboutSection() {
             {[
               { label: "Projects", value: "3+" },
               { label: "RAG Systems", value: "2" },
-              { label: "Knowledge Chunks", value: "22" },
+              { label: "Knowledge Chunks", value: "23" },
             ].map((stat) => (
               <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
                 <p className="text-xl font-bold text-white">{stat.value}</p>
@@ -379,7 +379,7 @@ function ExperienceSection() {
                 <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>Mar 2026 – present</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within five project cycles.
+                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within six project cycles.
               </p>
               <div className="space-y-2 text-sm">
                 {[
@@ -388,6 +388,7 @@ function ExperienceSection() {
                   ["Week 3", "Added streaming responses, metadata pre-filtering, expanded to 55 foods/18 regions"],
                   ["Week 4", "Built Digital Twin portfolio — AI agent backed by RAG over career data"],
                   ["Week 5", "UI/UX overhaul, expanded knowledge base to 22 chunks, added interview Q&A"],
+                  ["Week 6", "Chat history, voice input, MCP Server integration for agent-to-agent access"],
                 ].map(([week, desc]) => (
                   <div key={week} className="flex gap-3">
                     <span className="text-indigo-400 font-semibold shrink-0 w-16">{week}</span>
@@ -474,6 +475,76 @@ function InterviewSection() {
   );
 }
 
+// ── Chat History helpers ──────────────────────────────────────────────────────
+const CHAT_STORAGE_KEY = "dt-chat-history";
+const MAX_STORED_MESSAGES = 50;
+
+function loadChatHistory(): Message[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map((m: Message) => ({ ...m, streaming: false }));
+  } catch { /* corrupted — ignore */ }
+  return [];
+}
+
+function saveChatHistory(messages: Message[]) {
+  try {
+    const toSave = messages
+      .filter((m) => m.content)
+      .map(({ role, content }) => ({ role, content }))
+      .slice(-MAX_STORED_MESSAGES);
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(toSave));
+  } catch { /* storage full — ignore */ }
+}
+
+function clearChatHistory() {
+  try { localStorage.removeItem(CHAT_STORAGE_KEY); } catch {}
+}
+
+// ── Voice Input hook ─────────────────────────────────────────────────────────
+function useVoiceInput(onResult: (text: string) => void) {
+  const [listening, setListening] = useState(false);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const recognitionRef = useRef<any>(null);
+
+  function getSR(): any {
+    const w = window as any;
+    return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+  }
+
+  const toggle = useCallback(() => {
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+    const SR = getSR();
+    if (!SR) { alert("Voice input is not supported in this browser."); return; }
+    const r = new SR();
+    r.lang = "en-US";
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    recognitionRef.current = r;
+    r.onresult = (e: any) => {
+      const text = e.results?.[0]?.[0]?.transcript ?? "";
+      if (text) onResult(text);
+      setListening(false);
+    };
+    r.onerror = () => setListening(false);
+    r.onend = () => setListening(false);
+    r.start();
+    setListening(true);
+  }, [listening, onResult]);
+
+  const supported = typeof window !== "undefined" && !!getSR();
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  return { listening, toggle, supported };
+}
+
 // ── Section: Digital Twin Chat ────────────────────────────────────────────────
 function TwinSection() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -483,7 +554,24 @@ function TwinSection() {
   const [seeding, setSeeding] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Load chat history from localStorage on mount
+  useEffect(() => {
+    const saved = loadChatHistory();
+    if (saved.length > 0) {
+      setMessages(saved);
+      setSeeded(true);
+    }
+  }, []);
+
+  // Auto-scroll on new messages
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  // Persist messages to localStorage when they change (skip empty / streaming)
+  useEffect(() => {
+    if (messages.length > 0 && !messages.some((m) => m.streaming)) {
+      saveChatHistory(messages);
+    }
+  }, [messages]);
 
   const seed = async () => {
     setSeeding(true);
@@ -502,6 +590,11 @@ function TwinSection() {
       setMessages([{ role: "assistant", content: "Couldn't initialise — please try again." }]);
     }
     setSeeding(false);
+  };
+
+  const handleClearChat = () => {
+    clearChatHistory();
+    setMessages([{ role: "assistant", content: "Chat cleared! Ask me anything about my background, skills, or projects." }]);
   };
 
   const send = useCallback(async () => {
@@ -553,6 +646,10 @@ function TwinSection() {
     setLoading(false);
   }, [input, loading]);
 
+  // Voice input
+  const handleVoiceResult = useCallback((text: string) => { setInput(text); }, []);
+  const { listening, toggle: toggleVoice, supported: voiceSupported } = useVoiceInput(handleVoiceResult);
+
   const suggestions = ["What projects have you built?", "Tell me about your internship", "What are your AI skills?"];
 
   return (
@@ -571,6 +668,21 @@ function TwinSection() {
           className="flex-1 rounded-2xl flex flex-col overflow-hidden"
           style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(129,140,248,0.15)", minHeight: "500px" }}
         >
+          {/* Chat header bar */}
+          {(seeded || messages.length > 0) && (
+            <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-xs text-slate-500">Chat history saved locally</span>
+              </div>
+              <button
+                onClick={handleClearChat}
+                className="text-xs text-slate-600 hover:text-red-400 transition-colors cursor-pointer px-2 py-1 rounded"
+              >
+                Clear chat
+              </button>
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto p-6 space-y-4 chat-scroll">
             {!seeded && messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-5 text-center py-12">
@@ -580,7 +692,7 @@ function TwinSection() {
                 </div>
                 <div>
                   <p className="text-white font-semibold mb-1">Initialise the Digital Twin</p>
-                  <p className="text-slate-500 text-sm max-w-xs">This seeds 22 knowledge chunks into the vector database so I can answer accurately.</p>
+                  <p className="text-slate-500 text-sm max-w-xs">This seeds knowledge chunks into the vector database so I can answer accurately.</p>
                 </div>
                 <button
                   onClick={seed}
@@ -632,17 +744,36 @@ function TwinSection() {
           )}
           {(seeded || messages.length > 0) && (
             <div className="p-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send()}
-                  placeholder="Ask me anything…"
+                  placeholder={listening ? "Listening…" : "Ask me anything…"}
                   disabled={loading}
                   className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(129,140,248,0.15)" }}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: listening ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(129,140,248,0.15)",
+                  }}
                 />
+                {voiceSupported && (
+                  <button
+                    onClick={toggleVoice}
+                    disabled={loading}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-40 shrink-0"
+                    style={{
+                      background: listening ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.04)",
+                      border: listening ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(129,140,248,0.15)",
+                    }}
+                    title={listening ? "Stop listening" : "Voice input"}
+                  >
+                    <span className="text-sm" style={{ color: listening ? "#ef4444" : "#94a3b8" }}>
+                      {listening ? "⏹" : "🎤"}
+                    </span>
+                  </button>
+                )}
                 <button
                   onClick={send}
                   disabled={loading || !input.trim()}

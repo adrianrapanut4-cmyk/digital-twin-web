@@ -108,5 +108,10 @@
     "id": "internship-week5",
     "category": "experience",
     "text": "In Week 5 of the Ausbiz AI Builder internship, Adrian refined the Digital Twin portfolio with a complete UI/UX overhaul. He replaced scroll-snap with smooth scrolling, redesigned the navigation to a sleek top bar with scroll-aware active states, added new sections including an Interview Q&A section and a contact/links section. He expanded the RAG knowledge base from 16 to 22 chunks including interview talking points. The portfolio was redeployed to Vercel."
+  },
+  {
+    "id": "internship-week6",
+    "category": "experience",
+    "text": "In Week 6 of the Ausbiz AI Builder internship, Adrian added three major features to the Digital Twin portfolio. First, chat history persistence using localStorage so conversations survive across page refreshes and sessions, with a clear-chat button. Second, voice input using the Web Speech API (SpeechRecognition) so users can speak their questions instead of typing. Third, an MCP (Model Context Protocol) Server that exposes the Digital Twin as tools other AI agents can call — including ask_adrian for full RAG Q&A, get_adrian_profile for structured summaries, and search_knowledge for raw semantic search. The MCP server uses the same Upstash Vector and Groq backend as the web app and runs over stdio transport."
   }
 ]

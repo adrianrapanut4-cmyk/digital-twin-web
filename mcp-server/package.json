@@ -1,0 +1,15 @@
+{
+  "name": "digital-twin-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server for Adrian's Digital Twin — exposes RAG-powered Q&A as tools for AI agents",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@upstash/vector": "^1.2.3",
+    "groq-sdk": "^1.1.2"
+  }
+}

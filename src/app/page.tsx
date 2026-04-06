@@ -15,13 +15,17 @@ const NAV_ITEMS = [
   { id: "skills", label: "Skills" },
   { id: "projects", label: "Projects" },
   { id: "experience", label: "Experience" },
+  { id: "interview", label: "Q&A" },
   { id: "twin", label: "Digital Twin" },
+  { id: "contact", label: "Contact" },
 ];
 
-const SKILLS = {
-  "AI / ML": ["RAG Systems", "Vector Embeddings", "LLM Prompting", "ChromaDB", "Upstash Vector", "Ollama", "Groq", "Object Detection"],
-  "Web Dev": ["Next.js", "React", "TypeScript", "Tailwind CSS", "REST APIs", "Streaming / NDJSON"],
-  "Tools": ["Git & GitHub", "Vercel", "GitHub Copilot", "VS Code", "Python", "Node.js"],
+const SKILLS: Record<string, { icon: string; items: string[] }> = {
+  "AI / ML": { icon: "🧠", items: ["RAG Systems", "Vector Embeddings", "LLM Prompting", "ChromaDB", "Upstash Vector", "Ollama", "Groq", "Object Detection", "Semantic Search"] },
+  "Web Development": { icon: "⚡", items: ["Next.js", "React", "TypeScript", "Tailwind CSS", "REST APIs", "Streaming / NDJSON", "Server Actions"] },
+  "Data": { icon: "📊", items: ["JSON Pipelines", "Data Structuring", "STAR Annotation", "Metadata Filtering"] },
+  "Tools & Cloud": { icon: "☁️", items: ["Git & GitHub", "Vercel", "GitHub Copilot", "VS Code", "MCP Servers", "CI/CD"] },
+  "Languages": { icon: "💻", items: ["Python", "TypeScript", "JavaScript"] },
 };
 
 const PROJECTS = [
@@ -37,83 +41,115 @@ const PROJECTS = [
   {
     name: "Paulicy",
     badge: "Research",
-    desc: "Object Detection System with AI Application — capstone research project at St. Paul University Philippines applying computer vision to real-world problems.",
-    tags: ["Computer Vision", "AI", "Object Detection"],
+    desc: "AI-powered object detection system that scans bags to detect prohibited objects like weapons, enhancing campus safety at St. Paul University Philippines. Co-researched with Kier Tacus.",
+    tags: ["Computer Vision", "AI", "Object Detection", "Campus Safety"],
     url: "",
     github: "",
     highlight: false,
   },
   {
     name: "Digital Twin",
-    badge: "In Progress",
-    desc: "This portfolio itself — an AI agent that can answer questions about my professional background using RAG over my career knowledge base.",
+    badge: "Live",
+    desc: "This portfolio itself — an AI agent that answers questions about my professional background using RAG over a 22-chunk career knowledge base.",
     tags: ["Next.js", "Upstash Vector", "Groq", "RAG"],
-    url: "",
-    github: "",
-    highlight: false,
+    url: "https://digital-twin-web-hazel.vercel.app",
+    github: "https://github.com/adrianrapanut4-cmyk/digital-twin-web",
+    highlight: true,
   },
 ];
 
-// ── Radial Nav ──────────────────────────────────────────────────────────────
-function RadialNav() {
-  const [open, setOpen] = useState(false);
-  // Spread items in an upward arc: left-to-right from 160° → 20°
-  const ANGLES = [160, 120, 90, 60, 20];
-  const DIST = 180;
-  const HALF = 36; // half of 72px orb
+const INTERVIEW_QA = [
+  { q: "Why do you want to work in AI?", a: "I'm intrigued by the fact that AI can be used to address real-life issues and make people live better. I like systems that are learnable and make decisions, and I want to apply AI to real life — automation, object detection, and data analysis in particular." },
+  { q: "What has been your greatest technical accomplishment?", a: "Creating an AI-based object detection application where I used computer vision methods to recognize and follow objects. It allowed me to develop my abilities in programming, debugging, and working with real-world data." },
+  { q: "How do you approach a problem you don't know how to solve?", a: "I divide the problem into smaller segments, research possible solutions and test each step at a time. I learn fast with documentation, online sources, and testing. When necessary, I seek advice, but I always attempt to deeply understand the solution." },
+  { q: "What makes you stand out?", a: "I'm extremely motivated to study and develop — a mixture of technical skills and persistence. I don't give up easily when facing challenges. I'm more interested in building and putting into practice what I learn rather than just studying theory." },
+  { q: "Where do you see yourself in 3 years?", a: "I envision myself as an experienced AI developer, engaged in practical projects, constantly enhancing my knowledge, and developing new solutions — possibly as a leader or part of an effective AI-based system." },
+];
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setOpen(false);
-  };
+// ── Navbar ──────────────────────────────────────────────────────────────────
+function Navbar() {
+  const [active, setActive] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+      const sections = NAV_ITEMS.map((item) => document.getElementById(item.id));
+      let current = "";
+      for (const section of sections) {
+        if (section && section.getBoundingClientRect().top <= 150) {
+          current = section.id;
+        }
+      }
+      setActive(current);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <div className="fixed bottom-8 z-50" style={{ left: "50%", transform: "translateX(-50%)" }}>
-      {NAV_ITEMS.map((item, i) => {
-        const rad = (ANGLES[i] * Math.PI) / 180;
-        const x = Math.cos(rad) * DIST;
-        const y = Math.sin(rad) * DIST;
-        return (
-          <button
-            key={item.id}
-            onClick={() => scrollTo(item.id)}
-            className="absolute flex items-center justify-center text-sm font-semibold text-white rounded-full px-4 py-2 whitespace-nowrap cursor-pointer"
-            style={{
-              bottom: `${HALF + y}px`,
-              left: `${HALF + x}px`,
-              transform: open ? "translateX(-50%) scale(1)" : "translateX(-50%) scale(0.3)",
-              opacity: open ? 1 : 0,
-              transition: "all 300ms ease",
-              transitionDelay: open ? `${i * 50}ms` : "0ms",
-              pointerEvents: open ? "auto" : "none",
-              border: "1px solid rgba(129,140,248,0.5)",
-              background: "rgba(13,14,40,0.85)",
-              backdropFilter: "blur(16px)",
-            }}
-          >
-            {item.label}
-          </button>
-        );
-      })}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="relative w-18 h-18 rounded-full flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-110"
-        style={{
-          width: 72, height: 72,
-          background: "linear-gradient(135deg, #818cf8, #22d3ee)",
-          boxShadow: open
-            ? "0 0 0 6px rgba(129,140,248,0.2), 0 0 40px rgba(129,140,248,0.6)"
-            : "0 0 32px rgba(129,140,248,0.5)",
-        }}
-      >
-        <span
-          className="text-white font-bold text-lg transition-transform duration-300 select-none"
-          style={{ transform: open ? "rotate(45deg)" : "rotate(0deg)", display: "inline-block" }}
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: scrolled ? "rgba(4,8,26,0.85)" : "transparent",
+        backdropFilter: scrolled ? "blur(20px)" : "none",
+        borderBottom: scrolled ? "1px solid rgba(129,140,248,0.1)" : "1px solid transparent",
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <a href="#hero" className="text-white font-bold text-lg tracking-tight flex items-center gap-2">
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
+            style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }}>
+            AR
+          </span>
+          <span className="hidden sm:inline">Adrian<span className="text-indigo-400">.</span></span>
+        </a>
+
+        {/* Desktop links */}
+        <div className="hidden md:flex items-center gap-1">
+          {NAV_ITEMS.map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
+              style={{
+                color: active === item.id ? "#a5b4fc" : "#94a3b8",
+                background: active === item.id ? "rgba(129,140,248,0.1)" : "transparent",
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+
+        {/* Mobile toggle */}
+        <button
+          onClick={() => setMobileOpen((v) => !v)}
+          className="md:hidden text-white text-xl cursor-pointer p-2"
         >
-          {open ? "×" : "☰"}
-        </span>
-      </button>
-    </div>
+          {mobileOpen ? "✕" : "☰"}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden px-6 pb-4 flex flex-col gap-1" style={{ background: "rgba(4,8,26,0.95)" }}>
+          {NAV_ITEMS.map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              onClick={() => setMobileOpen(false)}
+              className="px-3 py-2 rounded-lg text-sm font-medium"
+              style={{ color: active === item.id ? "#a5b4fc" : "#94a3b8" }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </nav>
   );
 }
 
@@ -134,48 +170,48 @@ function HeroSection() {
   useEffect(() => { setTimeout(() => setShown(true), 100); }, []);
 
   return (
-    <section id="hero" className="snap relative flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+    <section id="hero" className="relative flex flex-col items-center justify-center text-center px-6 min-h-screen">
       <Blobs />
       <div
         className="relative z-10 max-w-3xl transition-all duration-1000"
         style={{ opacity: shown ? 1 : 0, transform: shown ? "translateY(0)" : "translateY(32px)" }}
       >
-        <p className="text-xs font-semibold tracking-[4px] text-indigo-400 uppercase mb-6">
-          Digital Twin Portfolio
-        </p>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8"
+          style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)" }}>
+          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-xs font-medium text-indigo-300">Available for opportunities</span>
+        </div>
         <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight mb-4"
-          style={{ textShadow: "0 0 40px rgba(129,140,248,0.6), 0 0 80px rgba(129,140,248,0.3)" }}>
+          style={{ textShadow: "0 0 40px rgba(129,140,248,0.5), 0 0 80px rgba(129,140,248,0.2)" }}>
           Adrian Kyle
           <br />
-          <span style={{ WebkitTextStroke: "1px rgba(129,140,248,0.6)", color: "transparent" }}>
+          <span className="bg-clip-text text-transparent"
+            style={{ backgroundImage: "linear-gradient(135deg, #818cf8, #22d3ee)" }}>
             T. Rapanut
           </span>
         </h1>
         <p className="text-lg md:text-xl text-slate-300 max-w-xl mx-auto mb-2 mt-4 leading-relaxed">
           Transforming ideas into technology-driven solutions.
         </p>
-        <p className="text-sm text-indigo-300 mb-10">
+        <p className="text-sm text-slate-500 mb-10">
           AI Builder · BSIT Student · RAG Developer
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
-          <button
-            onClick={() => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" })}
-            className="px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105"
-            style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", color: "#04081a" }}
-          >
+          <a href="#projects"
+            className="px-7 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg"
+            style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", color: "#04081a", boxShadow: "0 4px 24px rgba(129,140,248,0.3)" }}>
             View My Work →
-          </button>
-          <button
-            onClick={() => document.getElementById("twin")?.scrollIntoView({ behavior: "smooth" })}
-            className="px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105"
-            style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.4)", color: "#a5b4fc" }}
-          >
+          </a>
+          <a href="#twin"
+            className="px-7 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105"
+            style={{ background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.3)", color: "#a5b4fc" }}>
             Talk to My Digital Twin ✦
-          </button>
+          </a>
         </div>
-        <div className="mt-16 flex flex-col items-center gap-1 opacity-40">
-          <div className="w-px h-8" style={{ background: "linear-gradient(to bottom, transparent, #818cf8)" }} />
-          <p className="text-xs text-indigo-400">scroll</p>
+        <div className="mt-20 flex flex-col items-center gap-2 opacity-30">
+          <div className="w-5 h-8 rounded-full border-2 border-indigo-400 flex justify-center pt-1">
+            <div className="w-1 h-2 rounded-full bg-indigo-400 animate-bounce" />
+          </div>
         </div>
       </div>
     </section>
@@ -185,34 +221,46 @@ function HeroSection() {
 // ── Section: About ───────────────────────────────────────────────────────────
 function AboutSection() {
   return (
-    <section id="about" className="snap relative flex items-center justify-center px-6 py-20 overflow-hidden">
+    <section id="about" className="relative px-6 py-28">
       <div className="blob w-[500px] h-[500px] top-0 right-0 opacity-50" style={{ background: "rgba(129,140,248,0.08)" }} />
-      <div className="relative z-10 max-w-5xl w-full grid md:grid-cols-2 gap-12 items-center">
-        <div className="flex justify-center md:justify-end">
+      <div className="relative z-10 max-w-5xl mx-auto grid md:grid-cols-5 gap-12 items-center">
+        <div className="md:col-span-2 flex justify-center">
           <div
-            className="w-64 h-64 rounded-3xl flex items-center justify-center relative overflow-hidden"
-            style={{ border: "1px solid rgba(129,140,248,0.3)", boxShadow: "0 0 60px rgba(129,140,248,0.1)", background: "rgba(255,255,255,0.04)" }}
+            className="w-64 h-72 rounded-3xl flex items-center justify-center relative overflow-hidden group"
+            style={{ border: "1px solid rgba(129,140,248,0.2)", background: "rgba(255,255,255,0.03)" }}
           >
-            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(129,140,248,0.08), rgba(34,211,238,0.06))" }} />
-            <span className="text-7xl z-10">👨‍💻</span>
+            <div className="absolute inset-0 transition-opacity duration-500 group-hover:opacity-100 opacity-50"
+              style={{ background: "linear-gradient(135deg, rgba(129,140,248,0.1), rgba(34,211,238,0.08))" }} />
+            <span className="text-8xl z-10 select-none">👨‍💻</span>
+            <div className="absolute bottom-4 left-4 right-4 text-center">
+              <p className="text-xs text-slate-500">3rd Year BSIT</p>
+              <p className="text-xs text-indigo-400">St. Paul University Philippines</p>
+            </div>
           </div>
         </div>
-        <div>
+        <div className="md:col-span-3">
           <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3">About Me</p>
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
             Building AI that<br />
             <span className="text-indigo-400">knows what it&apos;s talking about.</span>
           </h2>
-          <p className="text-slate-300 leading-relaxed mb-6">
+          <p className="text-slate-300 leading-relaxed mb-4">
             I&apos;m a third-year IT student at St. Paul University Philippines, currently building RAG systems and intelligent agents at Ausbiz Consulting. I&apos;m passionate about applying AI to real-world problems — grounded in actual data, not hallucinations.
           </p>
-          <p className="text-slate-400 leading-relaxed mb-8 text-sm">
-            My research project, <em className="text-indigo-300">Paulicy</em>, explores object detection with AI. My internship work produced FoodRAG — a cloud-deployed RAG app with streaming responses and metadata filtering.
+          <p className="text-slate-400 leading-relaxed mb-6 text-sm">
+            My research project, <em className="text-indigo-300">Paulicy</em>, is an AI-powered object detection system that scans bags to detect prohibited items like weapons, enhancing campus safety. My internship work produced FoodRAG — a cloud-deployed RAG app with streaming responses and metadata filtering.
           </p>
-          <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(129,140,248,0.2)" }}>
-            <p className="text-xs text-indigo-400 font-semibold mb-1">Education</p>
-            <p className="text-white font-semibold">St. Paul University Philippines</p>
-            <p className="text-sm text-slate-400">BS Information Technology — 3rd Year</p>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Projects", value: "3+" },
+              { label: "RAG Systems", value: "2" },
+              { label: "Knowledge Chunks", value: "22" },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
+                <p className="text-xl font-bold text-white">{stat.value}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -223,19 +271,24 @@ function AboutSection() {
 // ── Section: Skills ───────────────────────────────────────────────────────────
 function SkillsSection() {
   return (
-    <section id="skills" className="snap relative flex items-center justify-center px-6 py-20 overflow-hidden">
-      <div className="blob w-[600px] h-[600px] bottom-0 left-[-10%] opacity-50" style={{ background: "rgba(13,79,108,0.15)" }} />
-      <div className="relative z-10 max-w-4xl w-full">
+    <section id="skills" className="relative px-6 py-28">
+      <div className="blob w-[600px] h-[600px] bottom-0 left-[-10%] opacity-50" style={{ background: "rgba(13,79,108,0.12)" }} />
+      <div className="relative z-10 max-w-5xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Toolkit</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">Skills & Technologies</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {Object.entries(SKILLS).map(([category, items]) => (
-            <div key={category} className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(129,140,248,0.15)" }}>
-              <p className="text-indigo-300 font-semibold text-sm mb-4">{category}</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">Skills & Technologies</h2>
+        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">Technologies I&apos;ve worked with across AI, web development, and data engineering.</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Object.entries(SKILLS).map(([category, { icon, items }]) => (
+            <div key={category} className="rounded-2xl p-5 transition-all duration-300 hover:translate-y-[-2px]"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-lg">{icon}</span>
+                <p className="text-indigo-300 font-semibold text-sm">{category}</p>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {items.map((skill) => (
                   <span key={skill} className="text-xs px-3 py-1 rounded-full text-slate-300"
-                    style={{ background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.15)" }}>
+                    style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.12)" }}>
                     {skill}
                   </span>
                 ))}
@@ -251,45 +304,48 @@ function SkillsSection() {
 // ── Section: Projects ─────────────────────────────────────────────────────────
 function ProjectsSection() {
   return (
-    <section id="projects" className="snap relative flex items-center justify-center px-6 py-20 overflow-hidden">
-      <div className="blob w-[400px] h-[400px] top-0 right-0" style={{ background: "rgba(107,15,58,0.12)" }} />
-      <div className="relative z-10 max-w-5xl w-full">
+    <section id="projects" className="relative px-6 py-28">
+      <div className="blob w-[400px] h-[400px] top-0 right-0" style={{ background: "rgba(107,15,58,0.1)" }} />
+      <div className="relative z-10 max-w-5xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Work</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">Projects</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">Projects</h2>
+        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">From RAG systems to computer vision — projects that solve real problems.</p>
         <div className="grid md:grid-cols-3 gap-6">
           {PROJECTS.map((p) => (
             <div
               key={p.name}
-              className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.02]"
+              className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:translate-y-[-4px]"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: p.highlight ? "1px solid rgba(129,140,248,0.4)" : "1px solid rgba(255,255,255,0.07)",
-                boxShadow: p.highlight ? "0 0 40px rgba(129,140,248,0.08)" : "none",
+                background: "rgba(255,255,255,0.03)",
+                border: p.highlight ? "1px solid rgba(129,140,248,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                boxShadow: p.highlight ? "0 8px 40px rgba(129,140,248,0.06)" : "none",
               }}
             >
-              <span
-                className="text-xs font-bold px-2 py-0.5 rounded-full self-start"
-                style={{
-                  background: p.badge === "Live" ? "rgba(34,211,238,0.15)" : p.badge === "Research" ? "rgba(129,140,248,0.15)" : "rgba(255,255,255,0.07)",
-                  color: p.badge === "Live" ? "#22d3ee" : p.badge === "Research" ? "#a5b4fc" : "#94a3b8",
-                  border: `1px solid ${p.badge === "Live" ? "rgba(34,211,238,0.3)" : p.badge === "Research" ? "rgba(129,140,248,0.3)" : "rgba(255,255,255,0.1)"}`,
-                }}
-              >
-                {p.badge}
-              </span>
-              <div>
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                  style={{
+                    background: p.badge === "Live" ? "rgba(34,211,238,0.12)" : "rgba(129,140,248,0.12)",
+                    color: p.badge === "Live" ? "#22d3ee" : "#a5b4fc",
+                    border: `1px solid ${p.badge === "Live" ? "rgba(34,211,238,0.25)" : "rgba(129,140,248,0.25)"}`,
+                  }}
+                >
+                  {p.badge === "Live" && "● "}{p.badge}
+                </span>
+              </div>
+              <div className="flex-1">
                 <h3 className="text-white font-bold text-lg mb-2">{p.name}</h3>
                 <p className="text-slate-400 text-sm leading-relaxed">{p.desc}</p>
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-auto">
+              <div className="flex flex-wrap gap-1.5">
                 {p.tags.map((t) => (
-                  <span key={t} className="text-xs text-indigo-400" style={{ opacity: 0.7 }}>{t}</span>
+                  <span key={t} className="text-xs text-indigo-400/70">{t}</span>
                 ))}
               </div>
               {(p.url || p.github) && (
-                <div className="flex gap-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  {p.url && <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-white transition-colors">Live ↗</a>}
-                  {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-white transition-colors">GitHub ↗</a>}
+                <div className="flex gap-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  {p.url && <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-white transition-colors font-medium">Live ↗</a>}
+                  {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-white transition-colors font-medium">GitHub ↗</a>}
                 </div>
               )}
             </div>
@@ -303,34 +359,35 @@ function ProjectsSection() {
 // ── Section: Experience ───────────────────────────────────────────────────────
 function ExperienceSection() {
   return (
-    <section id="experience" className="snap relative flex items-center justify-center px-6 py-20 overflow-hidden">
-      <div className="blob w-[500px] h-[500px] top-[-5%] left-[40%]" style={{ background: "rgba(76,29,149,0.12)" }} />
-      <div className="relative z-10 max-w-3xl w-full">
+    <section id="experience" className="relative px-6 py-28">
+      <div className="blob w-[500px] h-[500px] top-[-5%] left-[40%]" style={{ background: "rgba(76,29,149,0.1)" }} />
+      <div className="relative z-10 max-w-3xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Journey</p>
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">Experience</h2>
         <div className="relative pl-8">
-          <div className="absolute left-0 top-2 bottom-2 w-px" style={{ background: "linear-gradient(to bottom, #818cf8, rgba(129,140,248,0.1))" }} />
+          <div className="absolute left-0 top-2 bottom-2 w-px" style={{ background: "linear-gradient(to bottom, #818cf8, rgba(129,140,248,0.05))" }} />
           {/* Internship */}
           <div className="relative mb-10">
             <div className="absolute -left-10 top-1 w-4 h-4 rounded-full"
-              style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", boxShadow: "0 0 12px rgba(129,140,248,0.6)" }} />
-            <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(129,140,248,0.2)" }}>
+              style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", boxShadow: "0 0 12px rgba(129,140,248,0.5)" }} />
+            <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.15)" }}>
               <div className="flex items-start justify-between gap-4 mb-3 flex-wrap">
                 <div>
                   <p className="text-white font-bold">AI Builder Intern</p>
                   <p className="text-indigo-300 text-sm">Ausbiz Consulting</p>
                 </div>
-                <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>Mar 2026 – present</span>
+                <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>Mar 2026 – present</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within three project cycles.
+                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within five project cycles.
               </p>
               <div className="space-y-2 text-sm">
                 {[
                   ["Week 1", "AI Agents & MCP server research; full dev environment setup"],
                   ["Week 2", "Built FoodRAG locally then migrated to Upstash + Groq + Next.js on Vercel"],
                   ["Week 3", "Added streaming responses, metadata pre-filtering, expanded to 55 foods/18 regions"],
-                  ["Week 4", "Building Digital Twin portfolio — AI agent backed by RAG over career data"],
+                  ["Week 4", "Built Digital Twin portfolio — AI agent backed by RAG over career data"],
+                  ["Week 5", "UI/UX overhaul, expanded knowledge base to 22 chunks, added interview Q&A"],
                 ].map(([week, desc]) => (
                   <div key={week} className="flex gap-3">
                     <span className="text-indigo-400 font-semibold shrink-0 w-16">{week}</span>
@@ -338,10 +395,10 @@ function ExperienceSection() {
                   </div>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                 {["Next.js", "TypeScript", "Upstash Vector", "Groq", "Python", "ChromaDB", "Ollama", "Vercel"].map((t) => (
                   <span key={t} className="text-xs px-2 py-0.5 rounded-full text-indigo-400"
-                    style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.15)" }}>{t}</span>
+                    style={{ background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.12)" }}>{t}</span>
                 ))}
               </div>
             </div>
@@ -350,19 +407,67 @@ function ExperienceSection() {
           <div className="relative">
             <div className="absolute -left-10 top-1 w-4 h-4 rounded-full"
               style={{ background: "rgba(129,140,248,0.3)", border: "1px solid rgba(129,140,248,0.5)" }} />
-            <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <p className="text-white font-bold">BS Information Technology</p>
                   <p className="text-indigo-300 text-sm">St. Paul University Philippines</p>
                 </div>
-                <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>3rd Year</span>
+                <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>3rd Year</span>
               </div>
               <p className="text-slate-400 text-sm mt-3">
                 Research: <em className="text-indigo-300">Paulicy — Object Detection System with AI Application</em>
               </p>
+              <p className="text-slate-500 text-xs mt-1">Co-researcher: Kier Tacus</p>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Section: Interview Q&A ────────────────────────────────────────────────────
+function InterviewSection() {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  return (
+    <section id="interview" className="relative px-6 py-28">
+      <div className="blob w-[400px] h-[400px] bottom-0 right-[-5%]" style={{ background: "rgba(76,29,149,0.1)" }} />
+      <div className="relative z-10 max-w-3xl mx-auto">
+        <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Personality</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">Interview Q&A</h2>
+        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">Get to know how I think, solve problems, and what drives me — straight from my own words.</p>
+        <div className="space-y-3">
+          {INTERVIEW_QA.map((item, i) => (
+            <div
+              key={i}
+              className="rounded-2xl overflow-hidden transition-all duration-300"
+              style={{
+                background: openIdx === i ? "rgba(129,140,248,0.06)" : "rgba(255,255,255,0.03)",
+                border: openIdx === i ? "1px solid rgba(129,140,248,0.25)" : "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <button
+                onClick={() => setOpenIdx(openIdx === i ? null : i)}
+                className="w-full text-left px-6 py-4 flex items-center justify-between gap-4 cursor-pointer"
+              >
+                <span className="text-white font-medium text-sm">{item.q}</span>
+                <span
+                  className="text-indigo-400 text-lg shrink-0 transition-transform duration-300"
+                  style={{ transform: openIdx === i ? "rotate(45deg)" : "rotate(0deg)" }}
+                >
+                  +
+                </span>
+              </button>
+              <div
+                className="overflow-hidden transition-all duration-300"
+                style={{ maxHeight: openIdx === i ? "200px" : "0px", opacity: openIdx === i ? 1 : 0 }}
+              >
+                <p className="px-6 pb-5 text-slate-300 text-sm leading-relaxed">{item.a}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -386,12 +491,12 @@ function TwinSection() {
       const res = await fetch("/api/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ force: false }),
+        body: JSON.stringify({ force: true }),
       });
       const data = await res.json();
       if (res.ok) {
         setSeeded(true);
-        setMessages([{ role: "assistant", content: `Hi! I'm Adrian's digital twin. ${data.message} Ask me anything about his background, skills, or projects.` }]);
+        setMessages([{ role: "assistant", content: `Hey! I'm Adrian's digital twin. ${data.message} Ask me anything about my background, skills, or projects.` }]);
       }
     } catch {
       setMessages([{ role: "assistant", content: "Couldn't initialise — please try again." }]);
@@ -448,45 +553,58 @@ function TwinSection() {
     setLoading(false);
   }, [input, loading]);
 
+  const suggestions = ["What projects have you built?", "Tell me about your internship", "What are your AI skills?"];
+
   return (
-    <section id="twin" className="snap relative flex flex-col items-center justify-center px-6 py-20 overflow-hidden">
-      <div className="blob w-[600px] h-[600px] top-0 left-[-20%]" style={{ background: "rgba(76,29,149,0.15)" }} />
-      <div className="blob w-[400px] h-[400px] bottom-0 right-[-10%]" style={{ background: "rgba(13,79,108,0.15)" }} />
-      <div className="relative z-10 w-full max-w-2xl flex flex-col" style={{ height: "80vh" }}>
-        <div className="text-center mb-6">
+    <section id="twin" className="relative px-6 py-28">
+      <div className="blob w-[600px] h-[600px] top-0 left-[-20%]" style={{ background: "rgba(76,29,149,0.12)" }} />
+      <div className="blob w-[400px] h-[400px] bottom-0 right-[-10%]" style={{ background: "rgba(13,79,108,0.12)" }} />
+      <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col" style={{ minHeight: "70vh" }}>
+        <div className="text-center mb-8">
           <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-2">AI Agent</p>
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Talk to My <span style={{ color: "#a5b4fc", textShadow: "0 0 40px rgba(129,140,248,0.6)" }}>Digital Twin</span>
+            Talk to My <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, #818cf8, #22d3ee)" }}>Digital Twin</span>
           </h2>
-          <p className="text-slate-400 text-sm">Ask me about my skills, projects, or experience — I&apos;ll answer as Adrian.</p>
+          <p className="text-slate-400 text-sm">Powered by RAG — ask anything about my background and get grounded answers.</p>
         </div>
         <div
-          className="flex-1 rounded-3xl flex flex-col overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.2)", boxShadow: "0 0 60px rgba(129,140,248,0.05)" }}
+          className="flex-1 rounded-2xl flex flex-col overflow-hidden"
+          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(129,140,248,0.15)", minHeight: "500px" }}
         >
           <div className="flex-1 overflow-y-auto p-6 space-y-4 chat-scroll">
             {!seeded && messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                <div className="text-5xl select-none">✦</div>
-                <p className="text-slate-300 font-medium">Initialise the digital twin to begin.</p>
-                <p className="text-slate-500 text-sm max-w-xs">This loads my knowledge base into the vector database so I can answer accurately.</p>
+              <div className="flex flex-col items-center justify-center h-full gap-5 text-center py-12">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, rgba(129,140,248,0.15), rgba(34,211,238,0.1))", border: "1px solid rgba(129,140,248,0.2)" }}>
+                  <span className="text-2xl">✦</span>
+                </div>
+                <div>
+                  <p className="text-white font-semibold mb-1">Initialise the Digital Twin</p>
+                  <p className="text-slate-500 text-sm max-w-xs">This seeds 22 knowledge chunks into the vector database so I can answer accurately.</p>
+                </div>
                 <button
                   onClick={seed}
                   disabled={seeding}
-                  className="mt-2 px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", color: "#04081a" }}
+                  className="px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", color: "#04081a", boxShadow: "0 4px 20px rgba(129,140,248,0.3)" }}
                 >
-                  {seeding ? "Initialising…" : "✦ Initialise Digital Twin"}
+                  {seeding ? "Initialising…" : "✦ Initialise"}
                 </button>
               </div>
             )}
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                {msg.role === "assistant" && (
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center mr-2 mt-1 shrink-0 text-xs font-bold"
+                    style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", color: "#04081a" }}>
+                    AR
+                  </div>
+                )}
                 <div
                   className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
                   style={msg.role === "user"
-                    ? { background: "linear-gradient(135deg, rgba(129,140,248,0.4), rgba(34,211,238,0.3))", border: "1px solid rgba(129,140,248,0.3)", color: "#fff" }
-                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#cbd5e1" }
+                    ? { background: "rgba(129,140,248,0.15)", border: "1px solid rgba(129,140,248,0.25)", color: "#fff" }
+                    : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "#cbd5e1" }
                   }
                 >
                   {msg.content || (msg.streaming && (
@@ -502,8 +620,18 @@ function TwinSection() {
             ))}
             <div ref={endRef} />
           </div>
+          {seeded && messages.length <= 1 && (
+            <div className="px-4 pb-2 flex flex-wrap gap-2">
+              {suggestions.map((s) => (
+                <button key={s} onClick={() => { setInput(s); }} className="text-xs px-3 py-1.5 rounded-full cursor-pointer transition-colors hover:bg-indigo-400/20"
+                  style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.15)", color: "#a5b4fc" }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
           {(seeded || messages.length > 0) && (
-            <div className="p-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="p-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
               <div className="flex gap-3">
                 <input
                   type="text"
@@ -512,8 +640,8 @@ function TwinSection() {
                   onKeyDown={(e) => e.key === "Enter" && send()}
                   placeholder="Ask me anything…"
                   disabled={loading}
-                  className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(129,140,248,0.2)" }}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(129,140,248,0.15)" }}
                 />
                 <button
                   onClick={send}
@@ -532,19 +660,50 @@ function TwinSection() {
   );
 }
 
+// ── Section: Contact ──────────────────────────────────────────────────────────
+function ContactSection() {
+  return (
+    <section id="contact" className="relative px-6 py-28">
+      <div className="blob w-[300px] h-[300px] top-0 left-[30%]" style={{ background: "rgba(129,140,248,0.08)" }} />
+      <div className="relative z-10 max-w-2xl mx-auto text-center">
+        <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3">Get In Touch</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Let&apos;s Connect</h2>
+        <p className="text-slate-400 text-sm mb-10 max-w-md mx-auto">
+          I&apos;m always open to new opportunities, collaborations, and conversations about AI.
+        </p>
+        <div className="flex flex-wrap justify-center gap-4">
+          <a href="mailto:adrianrapanut4@gmail.com"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105"
+            style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", color: "#a5b4fc" }}>
+            ✉ Email
+          </a>
+          <a href="https://github.com/adrianrapanut4-cmyk" target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
+            GitHub ↗
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Home() {
   return (
     <main style={{ background: "#04081a" }}>
+      <Navbar />
       <HeroSection />
       <AboutSection />
       <SkillsSection />
       <ProjectsSection />
       <ExperienceSection />
+      <InterviewSection />
       <TwinSection />
-      <RadialNav />
-      <footer className="text-center text-xs py-4" style={{ background: "#04081a", color: "#334155" }}>
-        Adrian Kyle T. Rapanut · AI Builder Internship Week 4 · Ausbiz Consulting
+      <ContactSection />
+      <footer className="text-center text-xs py-8 border-t" style={{ background: "#04081a", color: "#334155", borderColor: "rgba(255,255,255,0.05)" }}>
+        <p>Adrian Kyle T. Rapanut · AI Builder Internship · Ausbiz Consulting</p>
+        <p className="mt-1 text-slate-600">Built with Next.js, Upstash Vector, and Groq — powered by RAG</p>
       </footer>
     </main>
   );

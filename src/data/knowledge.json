@@ -7,7 +7,7 @@
   {
     "id": "about",
     "category": "about",
-    "text": "Adrian Kyle T. Rapanut is a third-year IT student at St. Paul University Philippines, currently working on a research project titled 'Paulicy: Object Detection System with AI Application.' He is passionate about applying artificial intelligence to real-world problems and continuously improving his skills. He takes pride in doing well in his course and staying committed to learning. What sets him apart is his drive to turn ideas into practical, working solutions."
+    "text": "Adrian Kyle T. Rapanut is a third-year IT student at St. Paul University Philippines, currently working on a research project titled 'Paulicy: Object Detection System with AI Application.' He is passionate about applying artificial intelligence to real-world problems and continuously improving his skills. He takes pride in doing well in his course and staying committed to learning. What sets him apart is his drive to turn ideas into practical, working solutions. He would like to work in AI as he is intrigued by the fact that it can be used to address real-life issues and make people live better. He likes systems that are learnable and make decisions, and wants to apply AI to real life such as automation, object detection, and data analysis."
   },
   {
     "id": "education",
@@ -17,7 +17,7 @@
   {
     "id": "research-paulicy",
     "category": "project",
-    "text": "Research Project: Paulicy — Object Detection System with AI Application. Adrian is currently developing Paulicy as part of his university research. It is an object detection system that uses artificial intelligence to identify and classify objects. This project reflects his ability to apply machine learning concepts to practical academic problems."
+    "text": "Research Project: Paulicy — Object Detection System with AI Application. Researchers: Adrian Kyle T. Rapanut and Kier Tacus. Paulicy is an AI-powered object detection system that works similarly to a metal detector used for inspecting bags. Its purpose is to automatically scan and identify items inside bags and immediately detect prohibited objects, such as weapons, before they are brought into the school. The system enhances campus safety by using artificial intelligence to recognize dangerous items quickly and assist security personnel in preventing potential threats."
   },
   {
     "id": "internship-ausbiz",
@@ -78,5 +78,35 @@
     "id": "digital-twin-project",
     "category": "project",
     "text": "Project: Digital Twin Portfolio. Adrian is building a personal AI-powered digital twin as part of the Ausbiz AI Builder internship (Week 4 and beyond). This is a web-based portfolio where an embedded AI agent can represent Adrian in professional conversations — answering questions about his background, projects, and skills using RAG over his actual career data. The digital twin uses Upstash Vector for semantic search over his profile knowledge base, Groq for LLM responses, and is deployed on Vercel with a unique deep-space gradient design and radial navigation."
+  },
+  {
+    "id": "interview-motivation",
+    "category": "interview",
+    "text": "Interview Q&A — Why AI? Adrian would like to work in AI because he is intrigued by the fact that it can be used to address real-life issues and make people live better. He likes systems that are learnable and make decisions, and he wants to apply AI to real life such as automation, object detection, and data analysis in particular."
+  },
+  {
+    "id": "interview-accomplishment",
+    "category": "interview",
+    "text": "Interview Q&A — Greatest Technical Accomplishment: Adrian's most significant technical accomplishment is creating an AI-based application including an object detector project where he used computer vision methods to recognize and follow objects. It allowed him to develop his abilities in the field of programming, debugging, and working with real-world data."
+  },
+  {
+    "id": "interview-problem-solving",
+    "category": "interview",
+    "text": "Interview Q&A — Problem Solving Approach: Adrian divides problems into smaller segments, researches possible solutions, and tests each step at a time. He learns fast with the help of documentation, online sources, and testing. When necessary, he seeks advice, but he will always attempt to deeply understand the solution himself."
+  },
+  {
+    "id": "interview-standout",
+    "category": "interview",
+    "text": "Interview Q&A — What Makes Adrian Stand Out: Adrian is extremely motivated to study and develop and has a mixture of technical skills and persistence. He does not give up easily when he has a challenge and he is more interested in building and putting into practice what he learns rather than just studying theory."
+  },
+  {
+    "id": "interview-future",
+    "category": "interview",
+    "text": "Interview Q&A — Where Adrian Sees Himself in 3 Years: After 3 years, Adrian envisions himself as an experienced AI developer, engaged in practical projects, constantly enhancing his knowledge, and developing new solutions, possibly as a leader or part of an effective AI-based system."
+  },
+  {
+    "id": "internship-week5",
+    "category": "experience",
+    "text": "In Week 5 of the Ausbiz AI Builder internship, Adrian refined the Digital Twin portfolio with a complete UI/UX overhaul. He replaced scroll-snap with smooth scrolling, redesigned the navigation to a sleek top bar with scroll-aware active states, added new sections including an Interview Q&A section and a contact/links section. He expanded the RAG knowledge base from 16 to 22 chunks including interview talking points. The portfolio was redeployed to Vercel."
   }
 ]

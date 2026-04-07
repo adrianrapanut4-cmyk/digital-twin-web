@@ -217,3 +217,121 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Week 9: Skip link ─────────────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #818cf8, #22d3ee);
+  color: #04081a;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 0 0 0.75rem 0.75rem;
+  transition: top 0.2s;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Week 9: Focus visible for accessibility ──────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Week 9: Skeleton loading animation ───────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+.light .skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Week 9: Offline banner ───────────────────────────────────────────────── */
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  backdrop-filter: blur(8px);
+}
+
+/* ── Week 9: Markdown in chat ─────────────────────────────────────────────── */
+.chat-markdown pre {
+  background: rgba(0,0,0,0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+}
+.light .chat-markdown pre {
+  background: rgba(0,0,0,0.05);
+}
+.chat-markdown code {
+  font-family: 'Courier New', monospace;
+}
+.chat-markdown code:not(pre code) {
+  background: rgba(129,140,248,0.15);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+.chat-markdown ul, .chat-markdown ol {
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+.chat-markdown li {
+  margin: 0.15rem 0;
+}
+.chat-markdown strong {
+  color: var(--text-primary);
+}
+.chat-markdown p {
+  margin: 0.25rem 0;
+}
+.chat-markdown p:first-child {
+  margin-top: 0;
+}
+.chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Week 9: Keyboard shortcut hint ───────────────────────────────────────── */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.65rem;
+  font-family: monospace;
+  border-radius: 0.25rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-dim);
+}
+.light .kbd {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.1);
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 
 // ── Scroll Reveal hook ─────────────────────────────────────────────────────
 function useScrollReveal(threshold = 0.15) {
@@ -17,6 +17,68 @@ function useScrollReveal(threshold = 0.15) {
   }, [threshold]);
   return ref;
 }
+
+// ── Online Status hook (Week 9) ────────────────────────────────────────────
+function useOnlineStatus() {
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    setOnline(navigator.onLine);
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
+  }, []);
+  return online;
+}
+
+// ── Simple Markdown renderer (Week 9) ──────────────────────────────────────
+function formatInline(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*") && !part.startsWith("**"))
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    if (part.startsWith("`") && part.endsWith("`"))
+      return <code key={i}>{part.slice(1, -1)}</code>;
+    return <span key={i}>{part}</span>;
+  });
+}
+
+const SimpleMarkdown = memo(function SimpleMarkdown({ content }: { content: string }) {
+  const lines = content.split("\n");
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+  let key = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.startsWith("```")) {
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) { codeLines.push(lines[i]); i++; }
+      i++;
+      elements.push(<pre key={key++}><code>{codeLines.join("\n")}</code></pre>);
+      continue;
+    }
+    if (!line.trim()) { i++; continue; }
+    if (line.match(/^[-*]\s/)) {
+      const items: string[] = [];
+      while (i < lines.length && lines[i].match(/^[-*]\s/)) { items.push(lines[i].replace(/^[-*]\s/, "")); i++; }
+      elements.push(<ul key={key++}>{items.map((item, j) => <li key={j}>{formatInline(item)}</li>)}</ul>);
+      continue;
+    }
+    if (line.match(/^\d+\.\s/)) {
+      const items: string[] = [];
+      while (i < lines.length && lines[i].match(/^\d+\.\s/)) { items.push(lines[i].replace(/^\d+\.\s/, "")); i++; }
+      elements.push(<ol key={key++}>{items.map((item, j) => <li key={j}>{formatInline(item)}</li>)}</ol>);
+      continue;
+    }
+    elements.push(<p key={key++}>{formatInline(line)}</p>);
+    i++;
+  }
+  return <>{elements}</>;
+});
 
 // ── Theme helpers ──────────────────────────────────────────────────────────
 const THEME_KEY = "dt-theme";
@@ -127,6 +189,8 @@ function Navbar({ theme, toggleTheme }: { theme: "dark" | "light"; toggleTheme: 
   return (
     <nav
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      role="navigation"
+      aria-label="Main navigation"
       style={{
         background: scrolled
           ? theme === "dark" ? "rgba(4,8,26,0.85)" : "rgba(248,250,252,0.85)"
@@ -164,6 +228,7 @@ function Navbar({ theme, toggleTheme }: { theme: "dark" | "light"; toggleTheme: 
             className="ml-2 w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110"
             style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.15)" }}
             title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
             <span className="text-sm">{theme === "dark" ? "☀️" : "🌙"}</span>
           </button>
@@ -175,6 +240,7 @@ function Navbar({ theme, toggleTheme }: { theme: "dark" | "light"; toggleTheme: 
             onClick={toggleTheme}
             className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer"
             style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.15)" }}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
             <span className="text-sm">{theme === "dark" ? "☀️" : "🌙"}</span>
           </button>
@@ -182,6 +248,8 @@ function Navbar({ theme, toggleTheme }: { theme: "dark" | "light"; toggleTheme: 
             onClick={() => setMobileOpen((v) => !v)}
             className="text-xl cursor-pointer p-2"
             style={{ color: "var(--text-primary)" }}
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileOpen}
           >
             {mobileOpen ? "✕" : "☰"}
           </button>
@@ -225,7 +293,8 @@ function HeroSection() {
   useEffect(() => { setTimeout(() => setShown(true), 100); }, []);
 
   return (
-    <section id="hero" className="relative flex flex-col items-center justify-center text-center px-6 min-h-screen">
+    <section id="hero" className="relative flex flex-col items-center justify-center text-center px-6 min-h-screen" role="banner">
+      <div id="main-content" className="sr-only" tabIndex={-1}>Main content</div>
       <Blobs />
       <div
         className="relative z-10 max-w-3xl transition-all duration-1000"
@@ -310,7 +379,7 @@ function AboutSection() {
             {[
               { label: "Projects", value: "3+" },
               { label: "RAG Systems", value: "2" },
-              { label: "Knowledge Chunks", value: "25" },
+              { label: "Knowledge Chunks", value: "26" },
             ].map((stat) => (
               <div key={stat.label} className="rounded-xl p-3 text-center hover-glow" style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
                 <p className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{stat.value}</p>
@@ -438,7 +507,7 @@ function ExperienceSection() {
                 <span className="text-xs px-3 py-1 rounded-full" style={{ background: "var(--glass)", color: "var(--text-dim)" }}>Mar 2026 – present</span>
               </div>
               <p className="text-sm leading-relaxed mb-4" style={{ color: "var(--text-muted)" }}>
-                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within eight project cycles.
+                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within nine project cycles.
               </p>
               <div className="space-y-2 text-sm">
                 {[
@@ -450,6 +519,7 @@ function ExperienceSection() {
                   ["Week 6", "Chat history, voice input, MCP Server integration for agent-to-agent access"],
                   ["Week 7", "LLM-enhanced RAG with query rewriting, analytics dashboard with usage insights"],
                   ["Week 8", "Multi-language support, UI animations & polish, theme toggle (dark/light)"],
+                  ["Week 9", "Performance optimization, accessibility, SEO, markdown chat, error handling"],
                 ].map(([week, desc]) => (
                   <div key={week} className="flex gap-3">
                     <span className="text-indigo-400 font-semibold shrink-0 w-16">{week}</span>
@@ -514,6 +584,8 @@ function InterviewSection() {
               <button
                 onClick={() => setOpenIdx(openIdx === i ? null : i)}
                 className="w-full text-left px-6 py-4 flex items-center justify-between gap-4 cursor-pointer"
+                aria-expanded={openIdx === i}
+                aria-controls={`interview-answer-${i}`}
               >
                 <span className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>{item.q}</span>
                 <span
@@ -525,6 +597,9 @@ function InterviewSection() {
               </button>
               <div
                 className="overflow-hidden transition-all duration-300"
+                id={`interview-answer-${i}`}
+                role="region"
+                aria-labelledby={`interview-q-${i}`}
                 style={{ maxHeight: openIdx === i ? "200px" : "0px", opacity: openIdx === i ? 1 : 0 }}
               >
                 <p className="px-6 pb-5 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{item.a}</p>
@@ -636,6 +711,10 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   const [seeded, setSeeded] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const lastQuestionRef = useRef("");
+
+  // Error messages that should show a retry button
+  const ERROR_MESSAGES = ["Something went wrong. Try again.", "Connection failed.", "Couldn't initialise — please try again."];
 
   // Load chat history from localStorage on mount
   useEffect(() => {
@@ -680,11 +759,16 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
     setMessages([{ role: "assistant", content: "Chat cleared! Ask me anything about my background, skills, or projects." }]);
   };
 
-  const send = useCallback(async () => {
-    if (!input.trim() || loading) return;
-    const question = input.trim();
-    setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: question }]);
+  const send = useCallback(async (retryQuestion?: string) => {
+    const question = retryQuestion || input.trim();
+    if (!question || loading) return;
+    if (!retryQuestion) setInput("");
+    lastQuestionRef.current = question;
+    setMessages((prev) => {
+      // Remove error message if retrying
+      const filtered = retryQuestion ? prev.filter((m, i) => !(i === prev.length - 1 && m.role === "assistant")) : prev;
+      return [...filtered, { role: "user", content: question }];
+    });
     setLoading(true);
     setMessages((prev) => [...prev, { role: "assistant", content: "", streaming: true }]);
 
@@ -744,6 +828,10 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
 
   const suggestions = ["What projects have you built?", "Tell me about your internship", "What are your AI skills?"];
 
+  const retry = useCallback(() => {
+    if (lastQuestionRef.current) send(lastQuestionRef.current);
+  }, [send]);
+
   return (
     <section id="twin" className="relative px-6 py-28">
       <div className="blob w-[600px] h-[600px] top-0 left-[-20%]" style={{ background: "rgba(76,29,149,0.12)" }} />
@@ -776,7 +864,7 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
               </button>
             </div>
           )}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 chat-scroll">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 chat-scroll" role="log" aria-label="Chat messages" aria-live="polite">
             {!seeded && messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-5 text-center py-12">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
@@ -806,19 +894,30 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
                   </div>
                 )}
                 <div
-                  className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed${msg.role === "assistant" ? " chat-markdown" : ""}`}
                   style={msg.role === "user"
                     ? { background: "rgba(129,140,248,0.15)", border: "1px solid rgba(129,140,248,0.25)", color: "var(--text-primary)" }
                     : { background: theme === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, color: "var(--text-secondary)" }
                   }
                 >
-                  {msg.content || (msg.streaming && (
-                    <span className="flex gap-1">
+                  {msg.content ? (
+                    msg.role === "assistant" ? <SimpleMarkdown content={msg.content} /> : msg.content
+                  ) : (msg.streaming && (
+                    <span className="flex gap-1" aria-label="Loading response">
                       {[0, 1, 2].map((j) => <span key={j} className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: `${j * 150}ms` }} />)}
                     </span>
                   ))}
                   {msg.content && msg.streaming && (
                     <span className="inline-block w-0.5 h-3.5 bg-indigo-400 animate-pulse ml-0.5 align-middle" />
+                  )}
+                  {msg.role === "assistant" && !msg.streaming && ERROR_MESSAGES.includes(msg.content) && (
+                    <button
+                      onClick={retry}
+                      className="mt-2 text-xs px-3 py-1 rounded-lg cursor-pointer transition-colors hover:bg-red-400/20"
+                      style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}
+                    >
+                      ↻ Retry
+                    </button>
                   )}
                 </div>
               </div>
@@ -839,12 +938,14 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
             <div className="p-4" style={{ borderTop: "1px solid var(--glass-border)" }}>
               <div className="flex gap-2">
                 <input
+                  id="chat-input"
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send()}
-                  placeholder={listening ? "Listening…" : "Ask me anything…"}
+                  placeholder={listening ? "Listening…" : "Ask me anything… (Ctrl+K)"}
                   disabled={loading}
+                  aria-label="Chat message input"
                   className="flex-1 rounded-xl px-4 py-2.5 text-sm placeholder-slate-500 outline-none transition-colors"
                   style={{
                     background: theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
@@ -862,6 +963,7 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
                       border: listening ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(129,140,248,0.15)",
                     }}
                     title={listening ? "Stop listening" : "Voice input"}
+                    aria-label={listening ? "Stop listening" : "Voice input"}
                   >
                     <span className="text-sm" style={{ color: listening ? "#ef4444" : "#94a3b8" }}>
                       {listening ? "⏹" : "🎤"}
@@ -869,10 +971,11 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
                   </button>
                 )}
                 <button
-                  onClick={send}
+                  onClick={() => send()}
                   disabled={loading || !input.trim()}
                   className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-40 shrink-0"
                   style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }}
+                  aria-label="Send message"
                 >
                   <span className="text-sm font-bold" style={{ color: "#04081a" }}>↑</span>
                 </button>
@@ -1046,7 +1149,7 @@ function AnalyticsSection() {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Total Chunks", value: "25", sub: "Embedded vectors" },
+              { label: "Total Chunks", value: "26", sub: "Embedded vectors" },
               { label: "Categories", value: "8", sub: "Topic categories" },
               { label: "Embedding Model", value: "BGE", sub: "large-en-v1.5" },
               { label: "LLM Model", value: "LLaMA", sub: "3.3-70B" },
@@ -1096,6 +1199,7 @@ function ContactSection() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const online = useOnlineStatus();
 
   useEffect(() => {
     const stored = getStoredTheme();
@@ -1107,12 +1211,39 @@ export default function Home() {
     storeTheme(theme);
   }, [theme]);
 
+  // Keyboard shortcut: Ctrl+K to focus chat input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        const chatInput = document.getElementById("chat-input");
+        if (chatInput) {
+          chatInput.focus();
+          chatInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+      // Escape to close mobile menu
+      if (e.key === "Escape") {
+        const mobileMenu = document.querySelector("[aria-expanded='true']") as HTMLButtonElement | null;
+        if (mobileMenu) mobileMenu.click();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const toggleTheme = useCallback(() => {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
   }, []);
 
   return (
     <main style={{ background: "var(--bg)" }}>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      {!online && (
+        <div className="offline-banner" role="alert">
+          ⚠ You are offline — some features may be unavailable
+        </div>
+      )}
       <Navbar theme={theme} toggleTheme={toggleTheme} />
       <HeroSection />
       <AboutSection />

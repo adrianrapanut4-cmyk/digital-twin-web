@@ -113,5 +113,10 @@
     "id": "internship-week6",
     "category": "experience",
     "text": "In Week 6 of the Ausbiz AI Builder internship, Adrian added three major features to the Digital Twin portfolio. First, chat history persistence using localStorage so conversations survive across page refreshes and sessions, with a clear-chat button. Second, voice input using the Web Speech API (SpeechRecognition) so users can speak their questions instead of typing. Third, an MCP (Model Context Protocol) Server that exposes the Digital Twin as tools other AI agents can call — including ask_adrian for full RAG Q&A, get_adrian_profile for structured summaries, and search_knowledge for raw semantic search. The MCP server uses the same Upstash Vector and Groq backend as the web app and runs over stdio transport."
+  },
+  {
+    "id": "internship-week7",
+    "category": "experience",
+    "text": "In Week 7 of the Ausbiz AI Builder internship, Adrian implemented two advanced features for the Digital Twin. First, LLM-enhanced RAG with query rewriting — before each vector search, the user's question is sent to the LLM to be rewritten into a keyword-rich, semantically optimized search query, improving retrieval accuracy. The original question is still used for the final LLM answer to preserve natural phrasing. Second, a client-side analytics dashboard that tracks usage metrics in localStorage: total queries, average response time, topic distribution across knowledge base categories, recent query history, and a visual demonstration of the query enhancement process showing original vs rewritten queries. The analytics section includes bar charts for topic distribution and stat cards for key metrics."
   }
 ]

@@ -9,6 +9,14 @@ interface Message {
   streaming?: boolean;
 }
 
+interface QueryRecord {
+  q: string;
+  ts: number;
+  ms: number;
+  cats: string[];
+  rq?: string;
+}
+
 // ── Data ────────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: "about", label: "About" },
@@ -17,6 +25,7 @@ const NAV_ITEMS = [
   { id: "experience", label: "Experience" },
   { id: "interview", label: "Q&A" },
   { id: "twin", label: "Digital Twin" },
+  { id: "analytics", label: "Analytics" },
   { id: "contact", label: "Contact" },
 ];
 
@@ -254,7 +263,7 @@ function AboutSection() {
             {[
               { label: "Projects", value: "3+" },
               { label: "RAG Systems", value: "2" },
-              { label: "Knowledge Chunks", value: "23" },
+              { label: "Knowledge Chunks", value: "24" },
             ].map((stat) => (
               <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
                 <p className="text-xl font-bold text-white">{stat.value}</p>
@@ -379,7 +388,7 @@ function ExperienceSection() {
                 <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>Mar 2026 – present</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within six project cycles.
+                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within seven project cycles.
               </p>
               <div className="space-y-2 text-sm">
                 {[
@@ -389,6 +398,7 @@ function ExperienceSection() {
                   ["Week 4", "Built Digital Twin portfolio — AI agent backed by RAG over career data"],
                   ["Week 5", "UI/UX overhaul, expanded knowledge base to 22 chunks, added interview Q&A"],
                   ["Week 6", "Chat history, voice input, MCP Server integration for agent-to-agent access"],
+                  ["Week 7", "LLM-enhanced RAG with query rewriting, analytics dashboard with usage insights"],
                 ].map(([week, desc]) => (
                   <div key={week} className="flex gap-3">
                     <span className="text-indigo-400 font-semibold shrink-0 w-16">{week}</span>
@@ -504,6 +514,27 @@ function clearChatHistory() {
   try { localStorage.removeItem(CHAT_STORAGE_KEY); } catch {}
 }
 
+// ── Analytics helpers ─────────────────────────────────────────────────────────
+const ANALYTICS_KEY = "dt-analytics";
+const MAX_ANALYTICS_RECORDS = 200;
+
+function trackQuery(record: QueryRecord) {
+  try {
+    const raw = localStorage.getItem(ANALYTICS_KEY);
+    const data: QueryRecord[] = raw ? JSON.parse(raw) : [];
+    data.push(record);
+    localStorage.setItem(ANALYTICS_KEY, JSON.stringify(data.slice(-MAX_ANALYTICS_RECORDS)));
+  } catch { /* ignore */ }
+}
+
+function getAnalytics(): QueryRecord[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ANALYTICS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
 // ── Voice Input hook ─────────────────────────────────────────────────────────
 function useVoiceInput(onResult: (text: string) => void) {
   const [listening, setListening] = useState(false);
@@ -605,6 +636,10 @@ function TwinSection() {
     setLoading(true);
     setMessages((prev) => [...prev, { role: "assistant", content: "", streaming: true }]);
 
+    const startTime = Date.now();
+    let rewrittenQuery = "";
+    let categories: string[] = [];
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -635,11 +670,16 @@ function TwinSection() {
                 u[u.length - 1] = { ...last, content: last.content + parsed.token };
                 return u;
               });
+            } else if (parsed.type === "meta") {
+              rewrittenQuery = parsed.rewrittenQuery || "";
+            } else if (parsed.type === "sources") {
+              categories = (parsed.sources || []).map((s: { category: string }) => s.category).filter(Boolean);
             }
           } catch { /* skip */ }
         }
       }
       setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1], streaming: false }; return u; });
+      trackQuery({ q: question, ts: Date.now(), ms: Date.now() - startTime, cats: categories, rq: rewrittenQuery });
     } catch {
       setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "Connection failed." }; return u; });
     }
@@ -791,6 +831,184 @@ function TwinSection() {
   );
 }
 
+// ── Section: Analytics Dashboard ──────────────────────────────────────────────
+function AnalyticsSection() {
+  const [records, setRecords] = useState<QueryRecord[]>([]);
+
+  useEffect(() => { setRecords(getAnalytics()); }, []);
+
+  // Refresh analytics data when localStorage changes (same tab)
+  useEffect(() => {
+    const interval = setInterval(() => setRecords(getAnalytics()), 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const totalQueries = records.length;
+  const avgResponseTime = totalQueries > 0 ? Math.round(records.reduce((a, r) => a + r.ms, 0) / totalQueries) : 0;
+
+  // Category breakdown
+  const catCounts: Record<string, number> = {};
+  records.forEach((r) => r.cats.forEach((c) => { catCounts[c] = (catCounts[c] || 0) + 1; }));
+  const sortedCats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+  const maxCatCount = sortedCats.length > 0 ? sortedCats[0][1] : 1;
+
+  // Unique days
+  const uniqueDays = new Set(records.map((r) => new Date(r.ts).toDateString())).size;
+
+  // Last 5 queries (most recent first)
+  const recentQueries = [...records].reverse().slice(0, 5);
+
+  // Latest rewritten query example
+  const lastRewritten = [...records].reverse().find((r) => r.rq && r.rq !== r.q);
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    experience: "Experience",
+    project: "Projects",
+    skills: "Skills",
+    identity: "Identity",
+    education: "Education",
+    interview: "Interview",
+    about: "About",
+    personality: "Personality",
+  };
+
+  return (
+    <section id="analytics" className="relative px-6 py-28">
+      <div className="blob w-[500px] h-[500px] top-0 left-[-10%]" style={{ background: "rgba(76,29,149,0.1)" }} />
+      <div className="blob w-[400px] h-[400px] bottom-0 right-[-5%]" style={{ background: "rgba(13,79,108,0.1)" }} />
+      <div className="relative z-10 max-w-5xl mx-auto">
+        <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Insights</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">
+          Analytics <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, #818cf8, #22d3ee)" }}>Dashboard</span>
+        </h2>
+        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">
+          Real-time usage insights from your interactions with the Digital Twin — tracked locally in your browser.
+        </p>
+
+        {/* ─ Stat cards ─ */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          {[
+            { label: "Total Queries", value: totalQueries, icon: "💬" },
+            { label: "Avg Response", value: avgResponseTime > 0 ? `${(avgResponseTime / 1000).toFixed(1)}s` : "—", icon: "⚡" },
+            { label: "Topics Hit", value: sortedCats.length, icon: "🏷️" },
+            { label: "Active Days", value: uniqueDays, icon: "📅" },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl p-5 text-center transition-all duration-300 hover:translate-y-[-2px]"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.15)" }}>
+              <span className="text-2xl">{s.icon}</span>
+              <p className="text-2xl font-extrabold text-white mt-2">{s.value}</p>
+              <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* ─ Topic Distribution ─ */}
+          <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
+            <h3 className="text-white font-bold text-sm mb-5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full" style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }} />
+              Topic Distribution
+            </h3>
+            {sortedCats.length === 0 ? (
+              <p className="text-slate-500 text-sm text-center py-8">No data yet — ask the Digital Twin some questions!</p>
+            ) : (
+              <div className="space-y-3">
+                {sortedCats.map(([cat, count]) => (
+                  <div key={cat}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-300 font-medium">{CATEGORY_LABELS[cat] || cat}</span>
+                      <span className="text-indigo-400 font-semibold">{count}</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${(count / maxCatCount) * 100}%`,
+                          background: "linear-gradient(135deg, #818cf8, #22d3ee)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ─ Recent Queries ─ */}
+          <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
+            <h3 className="text-white font-bold text-sm mb-5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full" style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }} />
+              Recent Queries
+            </h3>
+            {recentQueries.length === 0 ? (
+              <p className="text-slate-500 text-sm text-center py-8">No queries recorded yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {recentQueries.map((r, i) => (
+                  <div key={i} className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                    <p className="text-slate-300 text-sm truncate">&ldquo;{r.q}&rdquo;</p>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <span className="text-xs text-indigo-400">{(r.ms / 1000).toFixed(1)}s</span>
+                      <span className="text-xs text-slate-600">{new Date(r.ts).toLocaleDateString()}</span>
+                      {r.cats.length > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(129,140,248,0.08)", color: "#a5b4fc" }}>
+                          {CATEGORY_LABELS[r.cats[0]] || r.cats[0]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ─ Query Enhancement example ─ */}
+        {lastRewritten && (
+          <div className="mt-6 rounded-2xl p-6" style={{ background: "rgba(129,140,248,0.04)", border: "1px solid rgba(129,140,248,0.15)" }}>
+            <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
+              <span>🔄</span> LLM Query Enhancement (Latest)
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <p className="text-xs text-slate-500 uppercase tracking-widest mb-2 font-semibold">Original Query</p>
+                <p className="text-slate-300 text-sm">&ldquo;{lastRewritten.q}&rdquo;</p>
+              </div>
+              <div className="rounded-xl p-4" style={{ background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.2)" }}>
+                <p className="text-xs text-indigo-400 uppercase tracking-widest mb-2 font-semibold">Rewritten for Search</p>
+                <p className="text-indigo-200 text-sm">&ldquo;{lastRewritten.rq}&rdquo;</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 mt-3">The LLM rewrites your question into a keyword-rich query before semantic search — improving retrieval accuracy.</p>
+          </div>
+        )}
+
+        {/* ─ Knowledge base breakdown ─ */}
+        <div className="mt-6 rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
+          <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full" style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }} />
+            Knowledge Base
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: "Total Chunks", value: "24", sub: "Embedded vectors" },
+              { label: "Categories", value: "8", sub: "Topic categories" },
+              { label: "Embedding Model", value: "BGE", sub: "large-en-v1.5" },
+              { label: "LLM Model", value: "LLaMA", sub: "3.3-70B" },
+            ].map((k) => (
+              <div key={k.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <p className="text-lg font-bold text-white">{k.value}</p>
+                <p className="text-xs text-slate-500">{k.label}</p>
+                <p className="text-xs text-indigo-400/60 mt-0.5">{k.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Section: Contact ──────────────────────────────────────────────────────────
 function ContactSection() {
   return (
@@ -831,6 +1049,7 @@ export default function Home() {
       <ExperienceSection />
       <InterviewSection />
       <TwinSection />
+      <AnalyticsSection />
       <ContactSection />
       <footer className="text-center text-xs py-8 border-t" style={{ background: "#04081a", color: "#334155", borderColor: "rgba(255,255,255,0.05)" }}>
         <p>Adrian Kyle T. Rapanut · AI Builder Internship · Ausbiz Consulting</p>

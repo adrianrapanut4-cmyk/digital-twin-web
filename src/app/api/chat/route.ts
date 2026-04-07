@@ -14,6 +14,28 @@ Always speak in first person as Adrian. Example: "I built FoodRAG using..." not 
 
 Use ONLY the context provided below to answer. Do not invent details not in the context.`;
 
+/* ── LLM-Enhanced RAG: Query Rewriting ── */
+async function rewriteQuery(question: string): Promise<string> {
+  try {
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a search query optimizer. Rewrite the user's question into a concise, keyword-rich search query optimized for semantic similarity search over a professional portfolio knowledge base containing skills, projects, education, experience, and interview answers. Output ONLY the rewritten query, nothing else. Keep it under 60 words.",
+        },
+        { role: "user", content: question },
+      ],
+      temperature: 0,
+      max_tokens: 80,
+    });
+    return completion.choices[0]?.message?.content?.trim() || question;
+  } catch {
+    return question;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { question } = await request.json();
@@ -27,8 +49,12 @@ export async function POST(request: NextRequest) {
 
     const trimmed = question.trim().slice(0, 500);
 
+    // Step 1: Rewrite the query for better semantic retrieval
+    const rewritten = await rewriteQuery(trimmed);
+
+    // Step 2: Search with the rewritten query
     const results = await index.query({
-      data: trimmed,
+      data: rewritten,
       topK: 4,
       includeData: true,
       includeMetadata: true,
@@ -41,6 +67,7 @@ export async function POST(request: NextRequest) {
       score: Math.round(r.score * 100) / 100,
     }));
 
+    // Step 3: Generate answer with original question (keeps natural phrasing)
     const stream = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
@@ -58,6 +85,12 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
+        // Emit metadata with rewritten query
+        controller.enqueue(
+          encoder.encode(
+            JSON.stringify({ type: "meta", rewrittenQuery: rewritten }) + "\n"
+          )
+        );
         controller.enqueue(
           encoder.encode(JSON.stringify({ type: "sources", sources }) + "\n")
         );

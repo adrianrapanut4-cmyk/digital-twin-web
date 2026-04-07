@@ -2,6 +2,32 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
+// ── Scroll Reveal hook ─────────────────────────────────────────────────────
+function useScrollReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { el.classList.add("revealed"); observer.unobserve(el); } },
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return ref;
+}
+
+// ── Theme helpers ──────────────────────────────────────────────────────────
+const THEME_KEY = "dt-theme";
+function getStoredTheme(): "dark" | "light" {
+  if (typeof window === "undefined") return "dark";
+  return (localStorage.getItem(THEME_KEY) as "dark" | "light") || "dark";
+}
+function storeTheme(theme: "dark" | "light") {
+  localStorage.setItem(THEME_KEY, theme);
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Message {
   role: "user" | "assistant";
@@ -76,7 +102,7 @@ const INTERVIEW_QA = [
 ];
 
 // ── Navbar ──────────────────────────────────────────────────────────────────
-function Navbar() {
+function Navbar({ theme, toggleTheme }: { theme: "dark" | "light"; toggleTheme: () => void }) {
   const [active, setActive] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -102,15 +128,17 @@ function Navbar() {
     <nav
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        background: scrolled ? "rgba(4,8,26,0.85)" : "transparent",
+        background: scrolled
+          ? theme === "dark" ? "rgba(4,8,26,0.85)" : "rgba(248,250,252,0.85)"
+          : "transparent",
         backdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(129,140,248,0.1)" : "1px solid transparent",
+        borderBottom: scrolled ? `1px solid ${theme === "dark" ? "rgba(129,140,248,0.1)" : "rgba(129,140,248,0.15)"}` : "1px solid transparent",
       }}
     >
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <a href="#hero" className="text-white font-bold text-lg tracking-tight flex items-center gap-2">
+        <a href="#hero" className="font-bold text-lg tracking-tight flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
           <span className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
-            style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }}>
+            style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", color: "#04081a" }}>
             AR
           </span>
           <span className="hidden sm:inline">Adrian<span className="text-indigo-400">.</span></span>
@@ -124,34 +152,52 @@ function Navbar() {
               href={`#${item.id}`}
               className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
               style={{
-                color: active === item.id ? "#a5b4fc" : "#94a3b8",
+                color: active === item.id ? "#818cf8" : "var(--text-muted)",
                 background: active === item.id ? "rgba(129,140,248,0.1)" : "transparent",
               }}
             >
               {item.label}
             </a>
           ))}
+          <button
+            onClick={toggleTheme}
+            className="ml-2 w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110"
+            style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.15)" }}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            <span className="text-sm">{theme === "dark" ? "☀️" : "🌙"}</span>
+          </button>
         </div>
 
         {/* Mobile toggle */}
-        <button
-          onClick={() => setMobileOpen((v) => !v)}
-          className="md:hidden text-white text-xl cursor-pointer p-2"
-        >
-          {mobileOpen ? "✕" : "☰"}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer"
+            style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.15)" }}
+          >
+            <span className="text-sm">{theme === "dark" ? "☀️" : "🌙"}</span>
+          </button>
+          <button
+            onClick={() => setMobileOpen((v) => !v)}
+            className="text-xl cursor-pointer p-2"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {mobileOpen ? "✕" : "☰"}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden px-6 pb-4 flex flex-col gap-1" style={{ background: "rgba(4,8,26,0.95)" }}>
+        <div className="md:hidden px-6 pb-4 flex flex-col gap-1" style={{ background: theme === "dark" ? "rgba(4,8,26,0.95)" : "rgba(248,250,252,0.95)" }}>
           {NAV_ITEMS.map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
               onClick={() => setMobileOpen(false)}
               className="px-3 py-2 rounded-lg text-sm font-medium"
-              style={{ color: active === item.id ? "#a5b4fc" : "#94a3b8" }}
+              style={{ color: active === item.id ? "#818cf8" : "var(--text-muted)" }}
             >
               {item.label}
             </a>
@@ -190,8 +236,8 @@ function HeroSection() {
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
           <span className="text-xs font-medium text-indigo-300">Available for opportunities</span>
         </div>
-        <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight mb-4"
-          style={{ textShadow: "0 0 40px rgba(129,140,248,0.5), 0 0 80px rgba(129,140,248,0.2)" }}>
+        <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-4"
+          style={{ color: "var(--text-primary)", textShadow: "0 0 40px rgba(129,140,248,0.5), 0 0 80px rgba(129,140,248,0.2)" }}>
           Adrian Kyle
           <br />
           <span className="bg-clip-text text-transparent"
@@ -199,10 +245,10 @@ function HeroSection() {
             T. Rapanut
           </span>
         </h1>
-        <p className="text-lg md:text-xl text-slate-300 max-w-xl mx-auto mb-2 mt-4 leading-relaxed">
+        <p className="text-lg md:text-xl max-w-xl mx-auto mb-2 mt-4 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
           Transforming ideas into technology-driven solutions.
         </p>
-        <p className="text-sm text-slate-500 mb-10">
+        <p className="text-sm mb-10" style={{ color: "var(--text-dim)" }}>
           AI Builder · BSIT Student · RAG Developer
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
@@ -229,45 +275,46 @@ function HeroSection() {
 
 // ── Section: About ───────────────────────────────────────────────────────────
 function AboutSection() {
+  const revealRef = useScrollReveal();
   return (
     <section id="about" className="relative px-6 py-28">
       <div className="blob w-[500px] h-[500px] top-0 right-0 opacity-50" style={{ background: "rgba(129,140,248,0.08)" }} />
-      <div className="relative z-10 max-w-5xl mx-auto grid md:grid-cols-5 gap-12 items-center">
+      <div ref={revealRef} className="scroll-reveal relative z-10 max-w-5xl mx-auto grid md:grid-cols-5 gap-12 items-center">
         <div className="md:col-span-2 flex justify-center">
           <div
-            className="w-64 h-72 rounded-3xl flex items-center justify-center relative overflow-hidden group"
-            style={{ border: "1px solid rgba(129,140,248,0.2)", background: "rgba(255,255,255,0.03)" }}
+            className="w-64 h-72 rounded-3xl flex items-center justify-center relative overflow-hidden group animate-float hover-lift"
+            style={{ border: "1px solid var(--card-border-highlight)", background: "var(--card-bg)" }}
           >
             <div className="absolute inset-0 transition-opacity duration-500 group-hover:opacity-100 opacity-50"
               style={{ background: "linear-gradient(135deg, rgba(129,140,248,0.1), rgba(34,211,238,0.08))" }} />
             <span className="text-8xl z-10 select-none">👨‍💻</span>
             <div className="absolute bottom-4 left-4 right-4 text-center">
-              <p className="text-xs text-slate-500">3rd Year BSIT</p>
+              <p className="text-xs" style={{ color: "var(--text-dim)" }}>3rd Year BSIT</p>
               <p className="text-xs text-indigo-400">St. Paul University Philippines</p>
             </div>
           </div>
         </div>
         <div className="md:col-span-3">
           <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3">About Me</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight" style={{ color: "var(--text-primary)" }}>
             Building AI that<br />
             <span className="text-indigo-400">knows what it&apos;s talking about.</span>
           </h2>
-          <p className="text-slate-300 leading-relaxed mb-4">
+          <p className="leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
             I&apos;m a third-year IT student at St. Paul University Philippines, currently building RAG systems and intelligent agents at Ausbiz Consulting. I&apos;m passionate about applying AI to real-world problems — grounded in actual data, not hallucinations.
           </p>
-          <p className="text-slate-400 leading-relaxed mb-6 text-sm">
+          <p className="leading-relaxed mb-6 text-sm" style={{ color: "var(--text-muted)" }}>
             My research project, <em className="text-indigo-300">Paulicy</em>, is an AI-powered object detection system that scans bags to detect prohibited items like weapons, enhancing campus safety. My internship work produced FoodRAG — a cloud-deployed RAG app with streaming responses and metadata filtering.
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 stagger-children revealed">
             {[
               { label: "Projects", value: "3+" },
               { label: "RAG Systems", value: "2" },
-              { label: "Knowledge Chunks", value: "24" },
+              { label: "Knowledge Chunks", value: "25" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
-                <p className="text-xl font-bold text-white">{stat.value}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
+              <div key={stat.label} className="rounded-xl p-3 text-center hover-glow" style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
+                <p className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{stat.value}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{stat.label}</p>
               </div>
             ))}
           </div>
@@ -279,25 +326,26 @@ function AboutSection() {
 
 // ── Section: Skills ───────────────────────────────────────────────────────────
 function SkillsSection() {
+  const revealRef = useScrollReveal();
   return (
     <section id="skills" className="relative px-6 py-28">
       <div className="blob w-[600px] h-[600px] bottom-0 left-[-10%] opacity-50" style={{ background: "rgba(13,79,108,0.12)" }} />
-      <div className="relative z-10 max-w-5xl mx-auto">
+      <div ref={revealRef} className="scroll-reveal relative z-10 max-w-5xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Toolkit</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">Skills & Technologies</h2>
-        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">Technologies I&apos;ve worked with across AI, web development, and data engineering.</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center" style={{ color: "var(--text-primary)" }}>Skills & Technologies</h2>
+        <p className="text-sm text-center mb-12 max-w-lg mx-auto" style={{ color: "var(--text-muted)" }}>Technologies I&apos;ve worked with across AI, web development, and data engineering.</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children revealed">
           {Object.entries(SKILLS).map(([category, { icon, items }]) => (
-            <div key={category} className="rounded-2xl p-5 transition-all duration-300 hover:translate-y-[-2px]"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
+            <div key={category} className="rounded-2xl p-5 hover-lift hover-glow"
+              style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-lg">{icon}</span>
                 <p className="text-indigo-300 font-semibold text-sm">{category}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {items.map((skill) => (
-                  <span key={skill} className="text-xs px-3 py-1 rounded-full text-slate-300"
-                    style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.12)" }}>
+                  <span key={skill} className="text-xs px-3 py-1 rounded-full"
+                    style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.12)", color: "var(--text-secondary)" }}>
                     {skill}
                   </span>
                 ))}
@@ -312,21 +360,22 @@ function SkillsSection() {
 
 // ── Section: Projects ─────────────────────────────────────────────────────────
 function ProjectsSection() {
+  const revealRef = useScrollReveal();
   return (
     <section id="projects" className="relative px-6 py-28">
       <div className="blob w-[400px] h-[400px] top-0 right-0" style={{ background: "rgba(107,15,58,0.1)" }} />
-      <div className="relative z-10 max-w-5xl mx-auto">
+      <div ref={revealRef} className="scroll-reveal relative z-10 max-w-5xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Work</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">Projects</h2>
-        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">From RAG systems to computer vision — projects that solve real problems.</p>
-        <div className="grid md:grid-cols-3 gap-6">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center" style={{ color: "var(--text-primary)" }}>Projects</h2>
+        <p className="text-sm text-center mb-12 max-w-lg mx-auto" style={{ color: "var(--text-muted)" }}>From RAG systems to computer vision — projects that solve real problems.</p>
+        <div className="grid md:grid-cols-3 gap-6 stagger-children revealed">
           {PROJECTS.map((p) => (
             <div
               key={p.name}
-              className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:translate-y-[-4px]"
+              className="rounded-2xl p-6 flex flex-col gap-4 hover-lift hover-glow"
               style={{
-                background: "rgba(255,255,255,0.03)",
-                border: p.highlight ? "1px solid rgba(129,140,248,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                background: "var(--card-bg)",
+                border: p.highlight ? "1px solid var(--card-border-highlight)" : "1px solid var(--glass-border)",
                 boxShadow: p.highlight ? "0 8px 40px rgba(129,140,248,0.06)" : "none",
               }}
             >
@@ -343,8 +392,8 @@ function ProjectsSection() {
                 </span>
               </div>
               <div className="flex-1">
-                <h3 className="text-white font-bold text-lg mb-2">{p.name}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{p.desc}</p>
+                <h3 className="font-bold text-lg mb-2" style={{ color: "var(--text-primary)" }}>{p.name}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{p.desc}</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {p.tags.map((t) => (
@@ -352,9 +401,9 @@ function ProjectsSection() {
                 ))}
               </div>
               {(p.url || p.github) && (
-                <div className="flex gap-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="flex gap-3 pt-3" style={{ borderTop: "1px solid var(--glass-border)" }}>
                   {p.url && <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-white transition-colors font-medium">Live ↗</a>}
-                  {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-white transition-colors font-medium">GitHub ↗</a>}
+                  {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-xs font-medium transition-colors" style={{ color: "var(--text-dim)" }}>GitHub ↗</a>}
                 </div>
               )}
             </div>
@@ -367,28 +416,29 @@ function ProjectsSection() {
 
 // ── Section: Experience ───────────────────────────────────────────────────────
 function ExperienceSection() {
+  const revealRef = useScrollReveal();
   return (
     <section id="experience" className="relative px-6 py-28">
       <div className="blob w-[500px] h-[500px] top-[-5%] left-[40%]" style={{ background: "rgba(76,29,149,0.1)" }} />
-      <div className="relative z-10 max-w-3xl mx-auto">
+      <div ref={revealRef} className="scroll-reveal relative z-10 max-w-3xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Journey</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">Experience</h2>
+        <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center" style={{ color: "var(--text-primary)" }}>Experience</h2>
         <div className="relative pl-8">
           <div className="absolute left-0 top-2 bottom-2 w-px" style={{ background: "linear-gradient(to bottom, #818cf8, rgba(129,140,248,0.05))" }} />
           {/* Internship */}
           <div className="relative mb-10">
             <div className="absolute -left-10 top-1 w-4 h-4 rounded-full"
               style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)", boxShadow: "0 0 12px rgba(129,140,248,0.5)" }} />
-            <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.15)" }}>
+            <div className="rounded-2xl p-6 hover-glow" style={{ background: "var(--card-bg)", border: "1px solid rgba(129,140,248,0.15)" }}>
               <div className="flex items-start justify-between gap-4 mb-3 flex-wrap">
                 <div>
-                  <p className="text-white font-bold">AI Builder Intern</p>
+                  <p className="font-bold" style={{ color: "var(--text-primary)" }}>AI Builder Intern</p>
                   <p className="text-indigo-300 text-sm">Ausbiz Consulting</p>
                 </div>
-                <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>Mar 2026 – present</span>
+                <span className="text-xs px-3 py-1 rounded-full" style={{ background: "var(--glass)", color: "var(--text-dim)" }}>Mar 2026 – present</span>
               </div>
-              <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within seven project cycles.
+              <p className="text-sm leading-relaxed mb-4" style={{ color: "var(--text-muted)" }}>
+                Building production RAG systems from local Python prototypes to cloud-deployed Next.js applications. Progressed from ChromaDB + Ollama to Upstash Vector + Groq within eight project cycles.
               </p>
               <div className="space-y-2 text-sm">
                 {[
@@ -399,14 +449,15 @@ function ExperienceSection() {
                   ["Week 5", "UI/UX overhaul, expanded knowledge base to 22 chunks, added interview Q&A"],
                   ["Week 6", "Chat history, voice input, MCP Server integration for agent-to-agent access"],
                   ["Week 7", "LLM-enhanced RAG with query rewriting, analytics dashboard with usage insights"],
+                  ["Week 8", "Multi-language support, UI animations & polish, theme toggle (dark/light)"],
                 ].map(([week, desc]) => (
                   <div key={week} className="flex gap-3">
                     <span className="text-indigo-400 font-semibold shrink-0 w-16">{week}</span>
-                    <span className="text-slate-400">{desc}</span>
+                    <span style={{ color: "var(--text-muted)" }}>{desc}</span>
                   </div>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: "1px solid var(--glass-border)" }}>
                 {["Next.js", "TypeScript", "Upstash Vector", "Groq", "Python", "ChromaDB", "Ollama", "Vercel"].map((t) => (
                   <span key={t} className="text-xs px-2 py-0.5 rounded-full text-indigo-400"
                     style={{ background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.12)" }}>{t}</span>
@@ -418,18 +469,18 @@ function ExperienceSection() {
           <div className="relative">
             <div className="absolute -left-10 top-1 w-4 h-4 rounded-full"
               style={{ background: "rgba(129,140,248,0.3)", border: "1px solid rgba(129,140,248,0.5)" }} />
-            <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="rounded-2xl p-6 hover-glow" style={{ background: "var(--card-bg)", border: "1px solid var(--glass-border)" }}>
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                  <p className="text-white font-bold">BS Information Technology</p>
+                  <p className="font-bold" style={{ color: "var(--text-primary)" }}>BS Information Technology</p>
                   <p className="text-indigo-300 text-sm">St. Paul University Philippines</p>
                 </div>
-                <span className="text-xs text-slate-500 px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>3rd Year</span>
+                <span className="text-xs px-3 py-1 rounded-full" style={{ background: "var(--glass)", color: "var(--text-dim)" }}>3rd Year</span>
               </div>
-              <p className="text-slate-400 text-sm mt-3">
+              <p className="text-sm mt-3" style={{ color: "var(--text-muted)" }}>
                 Research: <em className="text-indigo-300">Paulicy — Object Detection System with AI Application</em>
               </p>
-              <p className="text-slate-500 text-xs mt-1">Co-researcher: Kier Tacus</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-dim)" }}>Co-researcher: Kier Tacus</p>
             </div>
           </div>
         </div>
@@ -441,29 +492,30 @@ function ExperienceSection() {
 // ── Section: Interview Q&A ────────────────────────────────────────────────────
 function InterviewSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const revealRef = useScrollReveal();
 
   return (
     <section id="interview" className="relative px-6 py-28">
       <div className="blob w-[400px] h-[400px] bottom-0 right-[-5%]" style={{ background: "rgba(76,29,149,0.1)" }} />
-      <div className="relative z-10 max-w-3xl mx-auto">
+      <div ref={revealRef} className="scroll-reveal relative z-10 max-w-3xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Personality</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">Interview Q&A</h2>
-        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">Get to know how I think, solve problems, and what drives me — straight from my own words.</p>
+        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center" style={{ color: "var(--text-primary)" }}>Interview Q&A</h2>
+        <p className="text-sm text-center mb-12 max-w-lg mx-auto" style={{ color: "var(--text-muted)" }}>Get to know how I think, solve problems, and what drives me — straight from my own words.</p>
         <div className="space-y-3">
           {INTERVIEW_QA.map((item, i) => (
             <div
               key={i}
-              className="rounded-2xl overflow-hidden transition-all duration-300"
+              className="rounded-2xl overflow-hidden transition-all duration-300 hover-glow"
               style={{
-                background: openIdx === i ? "rgba(129,140,248,0.06)" : "rgba(255,255,255,0.03)",
-                border: openIdx === i ? "1px solid rgba(129,140,248,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                background: openIdx === i ? "rgba(129,140,248,0.06)" : "var(--card-bg)",
+                border: openIdx === i ? "1px solid var(--card-border-highlight)" : "1px solid var(--glass-border)",
               }}
             >
               <button
                 onClick={() => setOpenIdx(openIdx === i ? null : i)}
                 className="w-full text-left px-6 py-4 flex items-center justify-between gap-4 cursor-pointer"
               >
-                <span className="text-white font-medium text-sm">{item.q}</span>
+                <span className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>{item.q}</span>
                 <span
                   className="text-indigo-400 text-lg shrink-0 transition-transform duration-300"
                   style={{ transform: openIdx === i ? "rotate(45deg)" : "rotate(0deg)" }}
@@ -475,7 +527,7 @@ function InterviewSection() {
                 className="overflow-hidden transition-all duration-300"
                 style={{ maxHeight: openIdx === i ? "200px" : "0px", opacity: openIdx === i ? 1 : 0 }}
               >
-                <p className="px-6 pb-5 text-slate-300 text-sm leading-relaxed">{item.a}</p>
+                <p className="px-6 pb-5 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{item.a}</p>
               </div>
             </div>
           ))}
@@ -577,7 +629,7 @@ function useVoiceInput(onResult: (text: string) => void) {
 }
 
 // ── Section: Digital Twin Chat ────────────────────────────────────────────────
-function TwinSection() {
+function TwinSection({ theme }: { theme: "dark" | "light" }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -699,25 +751,26 @@ function TwinSection() {
       <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col" style={{ minHeight: "70vh" }}>
         <div className="text-center mb-8">
           <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-2">AI Agent</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+          <h2 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
             Talk to My <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, #818cf8, #22d3ee)" }}>Digital Twin</span>
           </h2>
-          <p className="text-slate-400 text-sm">Powered by RAG — ask anything about my background and get grounded answers.</p>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Powered by RAG — ask anything about my background and get grounded answers.</p>
         </div>
         <div
           className="flex-1 rounded-2xl flex flex-col overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(129,140,248,0.15)", minHeight: "500px" }}
+          style={{ background: theme === "dark" ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.7)", border: "1px solid rgba(129,140,248,0.15)", minHeight: "500px" }}
         >
           {/* Chat header bar */}
           {(seeded || messages.length > 0) && (
-            <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid var(--glass-border)" }}>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs text-slate-500">Chat history saved locally</span>
+                <span className="text-xs" style={{ color: "var(--text-dim)" }}>Chat history saved locally</span>
               </div>
               <button
                 onClick={handleClearChat}
-                className="text-xs text-slate-600 hover:text-red-400 transition-colors cursor-pointer px-2 py-1 rounded"
+                className="text-xs hover:text-red-400 transition-colors cursor-pointer px-2 py-1 rounded"
+                style={{ color: "var(--text-dim)" }}
               >
                 Clear chat
               </button>
@@ -731,8 +784,8 @@ function TwinSection() {
                   <span className="text-2xl">✦</span>
                 </div>
                 <div>
-                  <p className="text-white font-semibold mb-1">Initialise the Digital Twin</p>
-                  <p className="text-slate-500 text-sm max-w-xs">This seeds knowledge chunks into the vector database so I can answer accurately.</p>
+                  <p className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Initialise the Digital Twin</p>
+                  <p className="text-sm max-w-xs" style={{ color: "var(--text-dim)" }}>This seeds knowledge chunks into the vector database so I can answer accurately.</p>
                 </div>
                 <button
                   onClick={seed}
@@ -755,8 +808,8 @@ function TwinSection() {
                 <div
                   className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
                   style={msg.role === "user"
-                    ? { background: "rgba(129,140,248,0.15)", border: "1px solid rgba(129,140,248,0.25)", color: "#fff" }
-                    : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "#cbd5e1" }
+                    ? { background: "rgba(129,140,248,0.15)", border: "1px solid rgba(129,140,248,0.25)", color: "var(--text-primary)" }
+                    : { background: theme === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, color: "var(--text-secondary)" }
                   }
                 >
                   {msg.content || (msg.streaming && (
@@ -783,7 +836,7 @@ function TwinSection() {
             </div>
           )}
           {(seeded || messages.length > 0) && (
-            <div className="p-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="p-4" style={{ borderTop: "1px solid var(--glass-border)" }}>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -792,10 +845,11 @@ function TwinSection() {
                   onKeyDown={(e) => e.key === "Enter" && send()}
                   placeholder={listening ? "Listening…" : "Ask me anything…"}
                   disabled={loading}
-                  className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors"
+                  className="flex-1 rounded-xl px-4 py-2.5 text-sm placeholder-slate-500 outline-none transition-colors"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
+                    background: theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
                     border: listening ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(129,140,248,0.15)",
+                    color: "var(--text-primary)",
                   }}
                 />
                 {voiceSupported && (
@@ -804,7 +858,7 @@ function TwinSection() {
                     disabled={loading}
                     className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-40 shrink-0"
                     style={{
-                      background: listening ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.04)",
+                      background: listening ? "rgba(239,68,68,0.2)" : theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
                       border: listening ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(129,140,248,0.15)",
                     }}
                     title={listening ? "Stop listening" : "Voice input"}
@@ -834,6 +888,7 @@ function TwinSection() {
 // ── Section: Analytics Dashboard ──────────────────────────────────────────────
 function AnalyticsSection() {
   const [records, setRecords] = useState<QueryRecord[]>([]);
+  const revealRef = useScrollReveal();
 
   useEffect(() => { setRecords(getAnalytics()); }, []);
 
@@ -876,12 +931,12 @@ function AnalyticsSection() {
     <section id="analytics" className="relative px-6 py-28">
       <div className="blob w-[500px] h-[500px] top-0 left-[-10%]" style={{ background: "rgba(76,29,149,0.1)" }} />
       <div className="blob w-[400px] h-[400px] bottom-0 right-[-5%]" style={{ background: "rgba(13,79,108,0.1)" }} />
-      <div className="relative z-10 max-w-5xl mx-auto">
+      <div ref={revealRef} className="scroll-reveal relative z-10 max-w-5xl mx-auto">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3 text-center">Insights</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center" style={{ color: "var(--text-primary)" }}>
           Analytics <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, #818cf8, #22d3ee)" }}>Dashboard</span>
         </h2>
-        <p className="text-slate-400 text-sm text-center mb-12 max-w-lg mx-auto">
+        <p className="text-sm text-center mb-12 max-w-lg mx-auto" style={{ color: "var(--text-muted)" }}>
           Real-time usage insights from your interactions with the Digital Twin — tracked locally in your browser.
         </p>
 
@@ -893,30 +948,30 @@ function AnalyticsSection() {
             { label: "Topics Hit", value: sortedCats.length, icon: "🏷️" },
             { label: "Active Days", value: uniqueDays, icon: "📅" },
           ].map((s) => (
-            <div key={s.label} className="rounded-2xl p-5 text-center transition-all duration-300 hover:translate-y-[-2px]"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.15)" }}>
+            <div key={s.label} className="rounded-2xl p-5 text-center hover-lift hover-glow"
+              style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
               <span className="text-2xl">{s.icon}</span>
-              <p className="text-2xl font-extrabold text-white mt-2">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+              <p className="text-2xl font-extrabold mt-2" style={{ color: "var(--text-primary)" }}>{s.value}</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-dim)" }}>{s.label}</p>
             </div>
           ))}
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* ─ Topic Distribution ─ */}
-          <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
-            <h3 className="text-white font-bold text-sm mb-5 flex items-center gap-2">
+          <div className="rounded-2xl p-6 hover-glow" style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
+            <h3 className="font-bold text-sm mb-5 flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
               <span className="w-2 h-2 rounded-full" style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }} />
               Topic Distribution
             </h3>
             {sortedCats.length === 0 ? (
-              <p className="text-slate-500 text-sm text-center py-8">No data yet — ask the Digital Twin some questions!</p>
+              <p className="text-sm text-center py-8" style={{ color: "var(--text-dim)" }}>No data yet — ask the Digital Twin some questions!</p>
             ) : (
               <div className="space-y-3">
                 {sortedCats.map(([cat, count]) => (
                   <div key={cat}>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-300 font-medium">{CATEGORY_LABELS[cat] || cat}</span>
+                      <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{CATEGORY_LABELS[cat] || cat}</span>
                       <span className="text-indigo-400 font-semibold">{count}</span>
                     </div>
                     <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
@@ -935,21 +990,21 @@ function AnalyticsSection() {
           </div>
 
           {/* ─ Recent Queries ─ */}
-          <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
-            <h3 className="text-white font-bold text-sm mb-5 flex items-center gap-2">
+          <div className="rounded-2xl p-6 hover-glow" style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
+            <h3 className="font-bold text-sm mb-5 flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
               <span className="w-2 h-2 rounded-full" style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }} />
               Recent Queries
             </h3>
             {recentQueries.length === 0 ? (
-              <p className="text-slate-500 text-sm text-center py-8">No queries recorded yet.</p>
+              <p className="text-sm text-center py-8" style={{ color: "var(--text-dim)" }}>No queries recorded yet.</p>
             ) : (
               <div className="space-y-3">
                 {recentQueries.map((r, i) => (
-                  <div key={i} className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                    <p className="text-slate-300 text-sm truncate">&ldquo;{r.q}&rdquo;</p>
+                  <div key={i} className="rounded-xl p-3" style={{ background: "var(--glass)", border: "1px solid var(--glass-border)" }}>
+                    <p className="text-sm truncate" style={{ color: "var(--text-secondary)" }}>&ldquo;{r.q}&rdquo;</p>
                     <div className="flex items-center gap-3 mt-1.5">
                       <span className="text-xs text-indigo-400">{(r.ms / 1000).toFixed(1)}s</span>
-                      <span className="text-xs text-slate-600">{new Date(r.ts).toLocaleDateString()}</span>
+                      <span className="text-xs" style={{ color: "var(--text-dim)" }}>{new Date(r.ts).toLocaleDateString()}</span>
                       {r.cats.length > 0 && (
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(129,140,248,0.08)", color: "#a5b4fc" }}>
                           {CATEGORY_LABELS[r.cats[0]] || r.cats[0]}
@@ -965,40 +1020,40 @@ function AnalyticsSection() {
 
         {/* ─ Query Enhancement example ─ */}
         {lastRewritten && (
-          <div className="mt-6 rounded-2xl p-6" style={{ background: "rgba(129,140,248,0.04)", border: "1px solid rgba(129,140,248,0.15)" }}>
-            <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
+          <div className="mt-6 rounded-2xl p-6 hover-glow" style={{ background: "rgba(129,140,248,0.04)", border: "1px solid rgba(129,140,248,0.15)" }}>
+            <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
               <span>🔄</span> LLM Query Enhancement (Latest)
             </h3>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <p className="text-xs text-slate-500 uppercase tracking-widest mb-2 font-semibold">Original Query</p>
-                <p className="text-slate-300 text-sm">&ldquo;{lastRewritten.q}&rdquo;</p>
+              <div className="rounded-xl p-4" style={{ background: "var(--glass)", border: "1px solid var(--glass-border)" }}>
+                <p className="text-xs uppercase tracking-widest mb-2 font-semibold" style={{ color: "var(--text-dim)" }}>Original Query</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>&ldquo;{lastRewritten.q}&rdquo;</p>
               </div>
               <div className="rounded-xl p-4" style={{ background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.2)" }}>
                 <p className="text-xs text-indigo-400 uppercase tracking-widest mb-2 font-semibold">Rewritten for Search</p>
                 <p className="text-indigo-200 text-sm">&ldquo;{lastRewritten.rq}&rdquo;</p>
               </div>
             </div>
-            <p className="text-xs text-slate-600 mt-3">The LLM rewrites your question into a keyword-rich query before semantic search — improving retrieval accuracy.</p>
+            <p className="text-xs mt-3" style={{ color: "var(--text-dim)" }}>The LLM rewrites your question into a keyword-rich query before semantic search — improving retrieval accuracy.</p>
           </div>
         )}
 
         {/* ─ Knowledge base breakdown ─ */}
-        <div className="mt-6 rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(129,140,248,0.1)" }}>
-          <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
+        <div className="mt-6 rounded-2xl p-6 hover-glow" style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
+          <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
             <span className="w-2 h-2 rounded-full" style={{ background: "linear-gradient(135deg, #818cf8, #22d3ee)" }} />
             Knowledge Base
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Total Chunks", value: "24", sub: "Embedded vectors" },
+              { label: "Total Chunks", value: "25", sub: "Embedded vectors" },
               { label: "Categories", value: "8", sub: "Topic categories" },
               { label: "Embedding Model", value: "BGE", sub: "large-en-v1.5" },
               { label: "LLM Model", value: "LLaMA", sub: "3.3-70B" },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                <p className="text-lg font-bold text-white">{k.value}</p>
-                <p className="text-xs text-slate-500">{k.label}</p>
+              <div key={k.label} className="rounded-xl p-3 text-center" style={{ background: "var(--glass)", border: "1px solid var(--glass-border)" }}>
+                <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{k.value}</p>
+                <p className="text-xs" style={{ color: "var(--text-dim)" }}>{k.label}</p>
                 <p className="text-xs text-indigo-400/60 mt-0.5">{k.sub}</p>
               </div>
             ))}
@@ -1011,24 +1066,25 @@ function AnalyticsSection() {
 
 // ── Section: Contact ──────────────────────────────────────────────────────────
 function ContactSection() {
+  const revealRef = useScrollReveal();
   return (
     <section id="contact" className="relative px-6 py-28">
       <div className="blob w-[300px] h-[300px] top-0 left-[30%]" style={{ background: "rgba(129,140,248,0.08)" }} />
-      <div className="relative z-10 max-w-2xl mx-auto text-center">
+      <div ref={revealRef} className="scroll-reveal relative z-10 max-w-2xl mx-auto text-center">
         <p className="text-xs font-semibold tracking-[3px] text-indigo-400 uppercase mb-3">Get In Touch</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Let&apos;s Connect</h2>
-        <p className="text-slate-400 text-sm mb-10 max-w-md mx-auto">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: "var(--text-primary)" }}>Let&apos;s Connect</h2>
+        <p className="text-sm mb-10 max-w-md mx-auto" style={{ color: "var(--text-muted)" }}>
           I&apos;m always open to new opportunities, collaborations, and conversations about AI.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <a href="mailto:adrianrapanut4@gmail.com"
-            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 hover-glow"
             style={{ background: "rgba(129,140,248,0.08)", border: "1px solid rgba(129,140,248,0.2)", color: "#a5b4fc" }}>
             ✉ Email
           </a>
           <a href="https://github.com/adrianrapanut4-cmyk" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 hover-glow"
+            style={{ background: "var(--glass)", border: "1px solid var(--glass-border)", color: "var(--text-muted)" }}>
             GitHub ↗
           </a>
         </div>
@@ -1039,21 +1095,37 @@ function ContactSection() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Home() {
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const stored = getStoredTheme();
+    setTheme(stored);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("light", theme === "light");
+    storeTheme(theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
+  }, []);
+
   return (
-    <main style={{ background: "#04081a" }}>
-      <Navbar />
+    <main style={{ background: "var(--bg)" }}>
+      <Navbar theme={theme} toggleTheme={toggleTheme} />
       <HeroSection />
       <AboutSection />
       <SkillsSection />
       <ProjectsSection />
       <ExperienceSection />
       <InterviewSection />
-      <TwinSection />
+      <TwinSection theme={theme} />
       <AnalyticsSection />
       <ContactSection />
-      <footer className="text-center text-xs py-8 border-t" style={{ background: "#04081a", color: "#334155", borderColor: "rgba(255,255,255,0.05)" }}>
+      <footer className="text-center text-xs py-8 border-t" style={{ background: "var(--bg)", color: "var(--text-dim)", borderColor: "var(--glass-border)" }}>
         <p>Adrian Kyle T. Rapanut · AI Builder Internship · Ausbiz Consulting</p>
-        <p className="mt-1 text-slate-600">Built with Next.js, Upstash Vector, and Groq — powered by RAG</p>
+        <p className="mt-1" style={{ color: "var(--text-dim)" }}>Built with Next.js, Upstash Vector, and Groq — powered by RAG</p>
       </footer>
     </main>
   );

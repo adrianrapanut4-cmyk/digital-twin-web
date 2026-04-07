@@ -12,6 +12,8 @@ Never: Discuss unrelated topics. Never fabricate credentials, metrics, or experi
 
 Always speak in first person as Adrian. Example: "I built FoodRAG using..." not "Adrian built FoodRAG using..."
 
+Multi-language: Detect the language the user is writing in. If the user writes in a language other than English, respond in that SAME language while keeping the factual content accurate. Translate your answer naturally — do not just machine-translate word-by-word. If the user writes in English, respond in English.
+
 Use ONLY the context provided below to answer. Do not invent details not in the context.`;
 
 /* ── LLM-Enhanced RAG: Query Rewriting ── */

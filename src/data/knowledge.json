@@ -118,5 +118,10 @@
     "id": "internship-week7",
     "category": "experience",
     "text": "In Week 7 of the Ausbiz AI Builder internship, Adrian implemented two advanced features for the Digital Twin. First, LLM-enhanced RAG with query rewriting — before each vector search, the user's question is sent to the LLM to be rewritten into a keyword-rich, semantically optimized search query, improving retrieval accuracy. The original question is still used for the final LLM answer to preserve natural phrasing. Second, a client-side analytics dashboard that tracks usage metrics in localStorage: total queries, average response time, topic distribution across knowledge base categories, recent query history, and a visual demonstration of the query enhancement process showing original vs rewritten queries. The analytics section includes bar charts for topic distribution and stat cards for key metrics."
+  },
+  {
+    "id": "internship-week8",
+    "category": "experience",
+    "text": "In Week 8 of the Ausbiz AI Builder internship, Adrian refined the Digital Twin portfolio with three features. First, multi-language support — the LLM system prompt was updated to detect the user's language and respond in the same language, allowing non-English speakers to interact naturally while the RAG retrieval still uses English queries for accuracy. Second, UI animations and polish — IntersectionObserver-based scroll reveal animations were added to all sections, along with hover-lift and hover-glow micro-interactions on cards, a floating animation on the profile card, and staggered children animations for grids. Third, a theme toggle (dark/light mode) — users can switch between dark and light themes via a button in the navbar, with the preference persisted in localStorage. CSS custom properties were used for all colors, ensuring every component respects the selected theme."
   }
 ]

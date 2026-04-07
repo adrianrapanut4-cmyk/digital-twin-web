@@ -351,15 +351,16 @@ function AboutSection() {
       <div ref={revealRef} className="scroll-reveal relative z-10 max-w-5xl mx-auto grid md:grid-cols-5 gap-12 items-center">
         <div className="md:col-span-2 flex justify-center">
           <div
-            className="w-64 h-72 rounded-3xl flex items-center justify-center relative overflow-hidden group animate-float hover-lift"
+            className="w-64 h-80 rounded-3xl flex flex-col items-center justify-end relative overflow-hidden group animate-float hover-lift"
             style={{ border: "1px solid var(--card-border-highlight)", background: "var(--card-bg)" }}
           >
             <div className="absolute inset-0 transition-opacity duration-500 group-hover:opacity-100 opacity-50"
               style={{ background: "linear-gradient(135deg, rgba(129,140,248,0.1), rgba(34,211,238,0.08))" }} />
-            <span className="text-8xl z-10 select-none">👨‍💻</span>
-            <div className="absolute bottom-4 left-4 right-4 text-center">
-              <p className="text-xs" style={{ color: "var(--text-dim)" }}>3rd Year BSIT</p>
-              <p className="text-xs text-indigo-400">St. Paul University Philippines</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/profile.jpg" alt="Adrian Kyle T. Rapanut" className="w-full h-full object-cover absolute inset-0 z-0" />
+            <div className="relative z-10 w-full text-center py-3 px-4" style={{ background: "linear-gradient(to top, rgba(4,8,26,0.95), rgba(4,8,26,0.7), transparent)" }}>
+              <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>3rd Year BSIT</p>
+              <p className="text-xs font-semibold text-indigo-400">St. Paul University Philippines</p>
             </div>
           </div>
         </div>
@@ -369,10 +370,10 @@ function AboutSection() {
             Building AI that<br />
             <span className="text-indigo-400">knows what it&apos;s talking about.</span>
           </h2>
-          <p className="leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
+          <p className="leading-relaxed mb-4 text-base" style={{ color: "var(--text-primary)", opacity: 0.9 }}>
             I&apos;m a third-year IT student at St. Paul University Philippines, currently building RAG systems and intelligent agents at Ausbiz Consulting. I&apos;m passionate about applying AI to real-world problems — grounded in actual data, not hallucinations.
           </p>
-          <p className="leading-relaxed mb-6 text-sm" style={{ color: "var(--text-muted)" }}>
+          <p className="leading-relaxed mb-6 text-sm" style={{ color: "var(--text-secondary)" }}>
             My research project, <em className="text-indigo-300">Paulicy</em>, is an AI-powered object detection system that scans bags to detect prohibited items like weapons, enhancing campus safety. My internship work produced FoodRAG — a cloud-deployed RAG app with streaming responses and metadata filtering.
           </p>
           <div className="grid grid-cols-3 gap-3 stagger-children revealed">
@@ -712,7 +713,7 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   const [seeding, setSeeding] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const lastQuestionRef = useRef("");
-  const skipScrollRef = useRef(false);
+  const userInteracted = useRef(false);
 
   // Error messages that should show a retry button
   const ERROR_MESSAGES = ["Something went wrong. Try again.", "Connection failed.", "Couldn't initialise — please try again."];
@@ -721,15 +722,14 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   useEffect(() => {
     const saved = loadChatHistory();
     if (saved.length > 0) {
-      skipScrollRef.current = true; // don't auto-scroll on initial hydration
       setMessages(saved);
       setSeeded(true);
     }
   }, []);
 
-  // Auto-scroll on new messages (skips the initial localStorage load)
+  // Auto-scroll only after user has interacted (seed, send, or clear)
   useEffect(() => {
-    if (skipScrollRef.current) { skipScrollRef.current = false; return; }
+    if (!userInteracted.current) return;
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -741,6 +741,7 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   }, [messages]);
 
   const seed = async () => {
+    userInteracted.current = true;
     setSeeding(true);
     try {
       const res = await fetch("/api/seed", {
@@ -760,6 +761,7 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   };
 
   const handleClearChat = () => {
+    userInteracted.current = true;
     clearChatHistory();
     setMessages([{ role: "assistant", content: "Chat cleared! Ask me anything about my background, skills, or projects." }]);
   };
@@ -767,6 +769,7 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   const send = useCallback(async (retryQuestion?: string) => {
     const question = retryQuestion || input.trim();
     if (!question || loading) return;
+    userInteracted.current = true;
     if (!retryQuestion) setInput("");
     lastQuestionRef.current = question;
     setMessages((prev) => {
@@ -1209,6 +1212,11 @@ export default function Home() {
   useEffect(() => {
     const stored = getStoredTheme();
     setTheme(stored);
+    // Clear URL hash to prevent browser scroll-to-anchor on load/refresh
+    if (window.location.hash) {
+      history.replaceState(null, "", window.location.pathname);
+    }
+    window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {

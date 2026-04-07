@@ -712,6 +712,7 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   const [seeding, setSeeding] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const lastQuestionRef = useRef("");
+  const skipScrollRef = useRef(false);
 
   // Error messages that should show a retry button
   const ERROR_MESSAGES = ["Something went wrong. Try again.", "Connection failed.", "Couldn't initialise — please try again."];
@@ -720,13 +721,17 @@ function TwinSection({ theme }: { theme: "dark" | "light" }) {
   useEffect(() => {
     const saved = loadChatHistory();
     if (saved.length > 0) {
+      skipScrollRef.current = true; // don't auto-scroll on initial hydration
       setMessages(saved);
       setSeeded(true);
     }
   }, []);
 
-  // Auto-scroll on new messages
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Auto-scroll on new messages (skips the initial localStorage load)
+  useEffect(() => {
+    if (skipScrollRef.current) { skipScrollRef.current = false; return; }
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // Persist messages to localStorage when they change (skip empty / streaming)
   useEffect(() => {
